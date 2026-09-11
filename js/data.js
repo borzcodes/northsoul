@@ -29,42 +29,39 @@ NS.CONFIG = {
     link: '',
   },
 
-  // Archive filters. 'All', 'Photos' and 'Videos' are built in;
-  // anything else matches the `tags` on the media items below.
-  filters: ['All', 'Photos', 'Videos', 'BOLD.'],
 };
 
 /* ============================================================
    THE WALL — real photos + videos (assets/media).
-   photo(nn, title, year?, tags?)  ·  video(nn, title, year?, tags?, posterAt = 1s)
+   photo(nn, title, year?)  ·  video(nn, title, year?, posterAt = 1s)
    Tiles are grayscale; photos turn colour on hover, videos turn colour
    and play. The list is repeated (see WALL_REPEAT in app.js) to fill
    the wall, so order it the way you want it to read.
    ============================================================ */
-const photo = (n, title, year, tags = []) =>
-  ({ kind: 'photo', src: `assets/media/photo-${n}.jpg`, title, year, tags });
-const video = (n, title, year, tags = [], posterAt = 1) =>
-  ({ kind: 'video', src: `assets/posters/video-${n}.jpg`, video: `assets/media/video-${n}.mp4`, title, year, tags, posterAt });
+const photo = (n, title, year) =>
+  ({ kind: 'photo', src: `assets/media/photo-${n}.jpg`, title, year });
+const video = (n, title, year, posterAt = 1) =>
+  ({ kind: 'video', src: `assets/posters/video-${n}.jpg`, video: `assets/media/video-${n}.mp4`, title, year, posterAt });
 
 NS.MEDIA = [
-  photo('06', 'BOLD.', null, ['BOLD.']),
-  video('01', 'BOLD.', null, ['BOLD.']),
+  photo('06', 'BOLD.'),
+  video('01', 'BOLD.'),
   photo('01', 'Toy Room Club, Madrid', 2023),
   video('06', 'Peak time'),
   photo('03', 'The red room'),
   video('02', 'Una Más'),
-  photo('07', 'BOLD.', null, ['BOLD.']),
+  photo('07', 'BOLD.'),
   video('09', 'Hands up'),
   photo('04', 'Red haze'),
   video('15', 'Lasers'),
-  { kind: 'photo', src: 'assets/portrait.jpg', title: 'NorthSoul', year: null, tags: [] },
-  video('03', 'BOLD.', null, ['BOLD.']),
+  { kind: 'photo', src: 'assets/portrait.jpg', title: 'NorthSoul', year: null },
+  video('03', 'BOLD.'),
   photo('02', 'After midnight'),
   video('16', 'Flags up'),
-  photo('08', 'BOLD., from above', null, ['BOLD.']),
+  photo('08', 'BOLD., from above'),
   video('17', 'NorthSoul'),
   photo('05', 'Booth check'),
-  video('13', 'BOLD.', null, ['BOLD.']),
+  video('13', 'BOLD.'),
   video('04', 'The red room'),
   video('22', 'The red room'),
   video('07', 'Lights'),
@@ -77,5 +74,5 @@ NS.MEDIA = [
   video('19', 'Una Más'),
   video('20', 'On the decks'),
   video('21', 'Front row'),
-  video('05', 'Late set', null, [], 5),   // poster taken at 5s (the clip fades in from black)
+  video('05', 'Late set', null, 5),   // poster taken at 5s (the clip fades in from black)
 ];

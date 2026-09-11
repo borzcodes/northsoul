@@ -42,19 +42,20 @@ js/app.js       wall engine, landing hero, scroll flow, router
 | `aboutSubtitle`, `aboutImage` | About hero (also the landing hero) |
 | `bookingEmail`, `whatsapp`, `instagram` | the Email / WhatsApp buttons, About contact list, header + footer icon |
 | `nextEvent` | title, city, ISO `date` (`''` while unannounced), note, banner image, optional `link` |
-| `filters` | wall filter buttons: `All`, `Photos`, `Videos` are built in, other names match `tags` |
 
 **`NS.MEDIA`** — the wall. One entry per tile, in wall order (the list is shown 4× to fill the wall;
 change `WALL_REPEAT` in `js/app.js` to repeat more or less):
 
 ```js
-photo('06', 'BOLD.', 2025, ['BOLD.'])          // assets/media/photo-06.jpg
-video('01', 'BOLD.', null, ['BOLD.'])          // assets/media/video-01.mp4 + assets/posters/video-01.jpg
+photo('06', 'BOLD.', 2025)          // assets/media/photo-06.jpg
+video('01', 'BOLD.')                // assets/media/video-01.mp4 + assets/posters/video-01.jpg
+video('05', 'Late set', null, 5)    // 4th arg = second the poster still was taken at (default 1)
 ```
 
 - Tiles are grayscale. Hover a photo → colour; hover a video → colour + it plays (muted, looping).
-  On touch screens a tap does the same. There are no detail pages.
-- `year` is optional; `tags` feed the filter row.
+  On touch screens a tap does the same. There are no detail pages or filters.
+- `year` is optional.
+- Phones get a flat 2-column grid with the list repeated ×2; desktops the curved wall repeated ×4.
 
 ### Adding media
 

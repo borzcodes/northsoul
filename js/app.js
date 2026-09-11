@@ -16,10 +16,11 @@
   const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TOUCH = window.matchMedia('(hover: none), (pointer: coarse)').matches;
   const body = document.body;
 
   /* Wall tiles: the photos + videos from data.js, repeated to fill the wall */
-  const WALL_REPEAT = 4;
+  const WALL_REPEAT = TOUCH ? 2 : 4;
   const TILES = [];
   for (let r = 0; r < WALL_REPEAT; r++) TILES.push(...MEDIA);
 
@@ -41,6 +42,7 @@
       this.progress = 1;
       this.anim = null;
       this.mode = 'archive'; // 'intro' | 'archive' | 'ghost'
+      this.flat = TOUCH;     // 2D grid on touch devices
       this.hidden = false;   // skip rendering while covered
       this.hover = null;
       this.onHover = null;
@@ -80,6 +82,7 @@
         t.el.style.height = h + 'px';
       });
       this.reseedScatter();
+      this._sig = '';
     }
 
     setItems(items) {
@@ -96,7 +99,7 @@
         img.alt = item.title;
         el.appendChild(img);
         this.inner.appendChild(el);
-        return { el, img, item, video: null, sc: null, col: 0, row: 0, off: false };
+        return { el, img, item, video: null, sc: null, col: 0, row: 0, off: false, tf: '', os: '' };
       });
       this.layout();
     }
@@ -104,6 +107,7 @@
     /* Random 3D positions used for the hero → wall gather. */
     reseedScatter(visibleRatio = 0.18) {
       const { vw, vh } = this;
+      this._sig = '';
       const r = Math.random;
       const P = 1400; // must match .wall perspective
       for (const t of this.tiles) {
@@ -140,6 +144,7 @@
 
     animateTo(to, dur, hooks = {}) {
       if (REDUCED) dur = 0;
+      this._sig = '';
       this.anim = { from: this.progress, to, dur, start: performance.now(), ...hooks };
     }
 
@@ -149,7 +154,7 @@
     }
     get atTop() { return this.ty >= -0.5; }
     get atBottom() { return this.ty <= this.minY + 0.5; }
-    jumpTo(y) { this.ty = this.oy = clamp(y, this.minY, 0); this.tx = this.ox = 0; if (this.onScroll) this.onScroll(-this.oy); }
+    jumpTo(y) { this.ty = this.oy = clamp(y, this.minY, 0); this.tx = this.ox = 0; this._sig = ''; if (this.onScroll) this.onScroll(-this.oy); }
 
     setHover(tile) {
       if (this.hover === tile) return;
@@ -278,12 +283,18 @@
       };
       el.addEventListener('pointerup', up);
       el.addEventListener('pointercancel', up);
-      el.addEventListener('pointerleave', () => { if (!down) this.setHover(null); });
+      el.addEventListener('pointerleave', (e) => { if (!down && e.pointerType !== 'touch') this.setHover(null); });
 
-      let rt;
+      let rt, lastW = window.innerWidth, lastH = window.innerHeight;
       window.addEventListener('resize', () => {
         clearTimeout(rt);
-        rt = setTimeout(() => this.layout(), 120);
+        rt = setTimeout(() => {
+          // phones fire resize when the address bar hides: ignore small height-only changes
+          if (window.innerWidth === lastW && Math.abs(window.innerHeight - lastH) < 160) return;
+          lastW = window.innerWidth; lastH = window.innerHeight;
+          this.layout();
+          this.render(true);
+        }, 120);
       });
     }
 
@@ -304,38 +315,63 @@
         if (t >= 1) { this.anim = null; if (a.onDone) a.onDone(); }
       }
 
+      // settle: stop the lerp tail so the loop can go idle
+      if (Math.abs(this.tx - this.ox) < 0.05) this.ox = this.tx;
+      if (Math.abs(this.ty - this.oy) < 0.05) this.oy = this.ty;
+
       if (!this.hidden) this.render();
       requestAnimationFrame(this.loop);
     }
 
-    render() {
+    render(force) {
       const { vw, vh, cellW, cellH, gap, ox, oy, tiles } = this;
-      const tileW = cellW - gap, tileH = cellH - gap;
       const p = this.progress;
+
+      // whole-wall tilt from drag momentum (desktop only)
+      let tiltX = 0, tiltY = 0;
+      if (!REDUCED && !this.flat) {
+        tiltX = clamp(-this.vy * 0.12, -5, 5);
+        tiltY = clamp(this.vx * 0.12, -5, 5);
+      }
+
+      // nothing moved since the last frame → skip all the DOM work
+      const sig = `${ox.toFixed(1)}|${oy.toFixed(1)}|${p.toFixed(4)}|${tiltX.toFixed(1)}|${tiltY.toFixed(1)}`;
+      if (!force && sig === this._sig) return;
+      this._sig = sig;
+
+      const tileW = cellW - gap, tileH = cellH - gap;
       // The flat grid is wrapped onto a curved surface (a wide cylinder
       // horizontally, a gentler one vertically) so edge tiles tilt away
-      // without ever overlapping their neighbours.
+      // without ever overlapping their neighbours. Touch devices get a
+      // flat grid: far cheaper and nothing to hover anyway.
       const RX = vw * 1.35, RY = vh * 2.0;
       const DEG = 180 / Math.PI;
+      const flat = this.flat;
+      const margin = vh * (p < 1 ? 1.1 : 0.85);
 
       for (const t of tiles) {
         // flat grid position of the tile centre, relative to the viewport centre
         const u = this.left + t.col * cellW + ox + cellW / 2 - vw / 2;
         const v = this.top + t.row * cellH + oy + cellH / 2 - vh / 2;
-        // settled + well outside the viewport: don't bother
-        if (p >= 1 && (v < -vh * 0.85 || v > vh * 0.85)) {
+        // tiles that end up well outside the viewport are not worth animating or drawing
+        if (v < -margin || v > margin) {
           if (!t.off) { t.el.style.visibility = 'hidden'; t.off = true; }
           continue;
         }
         if (t.off) { t.el.style.visibility = ''; t.off = false; }
 
-        const thx = clamp(u / RX, -1.25, 1.25);
-        const thy = clamp(v / RY, -1.25, 1.25);
-        const gx = RX * Math.sin(thx) + vw / 2 - tileW / 2;
-        const gy = RY * Math.sin(thy) + vh / 2 - tileH / 2;
-        const gz = RX * (Math.cos(thx) - 1) + RY * (Math.cos(thy) - 1);
+        let gx, gy, gz, ry, rx;
+        if (flat) {
+          gx = u + vw / 2 - tileW / 2; gy = v + vh / 2 - tileH / 2; gz = 0; ry = 0; rx = 0;
+        } else {
+          const thx = clamp(u / RX, -1.25, 1.25);
+          const thy = clamp(v / RY, -1.25, 1.25);
+          gx = RX * Math.sin(thx) + vw / 2 - tileW / 2;
+          gy = RY * Math.sin(thy) + vh / 2 - tileH / 2;
+          gz = RX * (Math.cos(thx) - 1) + RY * (Math.cos(thy) - 1);
+          ry = thx * DEG; rx = -thy * DEG;
+        }
         let x = gx, y = gy, z = gz;
-        let ry = thx * DEG, rx = -thy * DEG;
         let o = 1;
         if (p < 1) {
           const s = t.sc;
@@ -348,19 +384,16 @@
           ry = lerp(s.ry, ry, p);
           o = lerp(s.o, 1, easeOutCubic(p));
         }
-        t.el.style.transform =
-          `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,${z.toFixed(2)}px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;
-        t.el.style.opacity = o.toFixed(3);
+        const tf = flat && p >= 1
+          ? `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`
+          : `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,${z.toFixed(1)}px) rotateY(${ry.toFixed(1)}deg) rotateX(${rx.toFixed(1)}deg)`;
+        if (tf !== t.tf) { t.el.style.transform = tf; t.tf = tf; }
+        const os = o >= 0.999 ? '1' : o.toFixed(3);
+        if (os !== t.os) { t.el.style.opacity = os; t.os = os; }
       }
 
-      // whole-wall tilt: drag velocity + pointer parallax
-      let tiltX = 0, tiltY = 0;
-      if (!REDUCED) {
-        const par = this.mode === 'archive' ? 0 : 3;
-        tiltX = clamp(-this.vy * 0.12, -5, 5) - this.py * par;
-        tiltY = clamp(this.vx * 0.12, -5, 5) + this.px * par;
-      }
-      this.inner.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+      const it = flat ? '' : `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+      if (it !== this._it) { this.inner.style.transform = it; this._it = it; }
     }
   }
 
@@ -415,43 +448,7 @@
   const wall = new Wall($('#wall'));
   const ftrTitle = $('#ftrTitle');
   const ftrCount = $('#ftrCount');
-  const filtersEl = $('#filters');
-  let activeFilter = 'All';
-
-  const tilesFor = (f) =>
-    f === 'All' ? TILES
-    : f === 'Photos' ? TILES.filter((t) => t.kind === 'photo')
-    : f === 'Videos' ? TILES.filter((t) => t.kind === 'video')
-    : TILES.filter((t) => (t.tags || []).includes(f));
   const caption = (m) => m.title + (m.year ? ` · ${m.year}` : '');
-
-  for (const f of CONFIG.filters) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = f;
-    b.dataset.filter = f;
-    if (f === activeFilter) b.classList.add('is-active');
-    b.addEventListener('click', () => setFilter(f));
-    filtersEl.appendChild(b);
-  }
-
-  function setFilter(f) {
-    if (f === activeFilter || wall.anim || phase !== 'wall') return;
-    activeFilter = f;
-    $$('button', filtersEl).forEach((b) => b.classList.toggle('is-active', b.dataset.filter === f));
-    // disturb the wall, swap the tiles, let it settle again
-    wall.reseedJitter();
-    wall.animateTo(0.35, 420, {
-      onDone: () => {
-        wall.setItems(tilesFor(f));
-        wall.jumpTo(0);
-        wall.reseedJitter();
-        wall.progress = 0.35;
-        ftrTitle.textContent = '';
-        wall.animateTo(1, 950);
-      },
-    });
-  }
 
   wall.setItems(TILES);
   wall.onHover = (item) => { if (item) ftrTitle.textContent = caption(item); };
@@ -496,7 +493,7 @@
     const x0 = (vw - (wN + wS) * k) / 2;
     const edge = mobile ? vw * 0.05 : vw * 0.025;
     heroLayout = {
-      fsStart, fsEnd,
+      fsStart, fsEnd, k, hN: heroL.offsetHeight, hS: heroR.offsetHeight,
       n0: { x: x0, y: vh * 0.5 },
       s0: { x: x0 + wN * k, y: vh * 0.5 },
       n1: { x: edge, y: mobile ? vh * 0.22 : vh * 0.60 },
@@ -508,10 +505,12 @@
   function renderHero() {
     const L = heroLayout;
     const e = easeInOutCubic(heroP);
-    const fs = lerp(L.fsStart, L.fsEnd, e);
-    heroL.style.fontSize = heroR.style.fontSize = fs.toFixed(2) + 'px';
-    heroL.style.transform = `translate(${lerp(L.n0.x, L.n1.x, e).toFixed(2)}px, ${lerp(L.n0.y, L.n1.y, e).toFixed(2)}px) translateY(-50%)`;
-    heroR.style.transform = `translate(${lerp(L.s0.x, L.s1.x, e).toFixed(2)}px, ${lerp(L.s0.y, L.s1.y, e).toFixed(2)}px) translateY(-50%)`;
+    // words keep their final font-size; growing is done with a transform (no layout per frame)
+    const sc = lerp(L.k, 1, e);
+    const nx = lerp(L.n0.x, L.n1.x, e), ny = lerp(L.n0.y, L.n1.y, e) - (L.hN * sc) / 2;
+    const sx = lerp(L.s0.x, L.s1.x, e), sy = lerp(L.s0.y, L.s1.y, e) - (L.hS * sc) / 2;
+    heroL.style.transform = `translate3d(${nx.toFixed(2)}px, ${ny.toFixed(2)}px, 0) scale(${sc.toFixed(4)})`;
+    heroR.style.transform = `translate3d(${sx.toFixed(2)}px, ${sy.toFixed(2)}px, 0) scale(${sc.toFixed(4)})`;
     heroTag.style.transform = `translate(-50%, ${L.tagY.toFixed(1)}px)`;
     heroTag.style.opacity = (1 - clamp(heroP / 0.22, 0, 1)).toFixed(3);
     const ip = clamp((heroP - 0.3) / 0.6, 0, 1);
@@ -524,11 +523,12 @@
     heroCta.textContent = heroP > 0.97 ? 'Scroll to enter' : 'Scroll';
   }
 
+  let heroLast = -1;
   function heroLoop() {
     if (phase !== 'hero') return;
     heroP = REDUCED ? heroTarget : lerp(heroP, heroTarget, 0.11);
     if (Math.abs(heroTarget - heroP) < 0.0005) heroP = heroTarget;
-    renderHero();
+    if (heroP !== heroLast) { renderHero(); heroLast = heroP; }
     if (heroAuto && heroP >= 0.995) enterWall();
     requestAnimationFrame(heroLoop);
   }
@@ -554,6 +554,7 @@
     hero.classList.remove('is-entering');
     hero.style.opacity = '';
     measureHero();
+    heroLast = -1;
     renderHero();
     // widths depend on the web font: measure again once it is in, then reveal
     document.fonts.ready.then(() => {
@@ -573,7 +574,7 @@
     wall.progress = 0;
     wall.jumpTo(0);
     wall.reseedScatter();
-    wall.render();          // lay the scattered tiles out once, then pause
+    wall.render(true);      // lay the scattered tiles out once, then pause
     wall.hidden = true;
   }
 
@@ -587,7 +588,7 @@
     wall.hidden = false;
     wall.mode = 'intro';
     hero.classList.add('is-entering');
-    wall.animateTo(1, REDUCED ? 0 : 1900, {
+    wall.animateTo(1, REDUCED ? 0 : 1700, {
       onUpdate: (p, t) => {
         hero.style.opacity = String(1 - clamp(t / 0.38, 0, 1));
         if (t > 0.62) body.classList.remove('is-hero');
