@@ -26,8 +26,8 @@ index.html      shell + all views (hero/archive, about, book, 404) + footer
 404.html        redirect used by static hosts for unknown paths
 css/style.css   theme, layout, responsive rules
 js/data.js      ← ALL CONTENT LIVES HERE (brand, links, next event, wall media)
-assets/         portrait, media/ (photos + videos), posters/ (video stills)
-tools/          posters.py — makes a poster still for every video
+assets/         portrait, media/ (photos + videos), tiles/ (640x400 stills: colour + baked grayscale)
+tools/          tiles.py — builds the stills; bump.py — refreshes the cache-buster on css/js links
 js/app.js       wall engine, landing hero, scroll flow, router
 ```
 
@@ -55,17 +55,19 @@ video('05', 'Late set', null, 5)    // 4th arg = second the poster still was tak
 - Tiles are grayscale. Hover a photo → colour; hover a video → colour + it plays (muted, looping).
   On touch screens a tap does the same. There are no detail pages or filters.
 - `year` is optional.
-- Phones get a flat 2-column grid with the list repeated ×2; desktops the curved wall repeated ×4.
+- Phones get the same curved wall with 3 columns. Touching a card lights it, sliding a finger across cards while scrolling lights each one as it passes, and the last one touched stays lit.
+- Desktop: the card under the cursor lights the instant the cursor enters it — and the highlight follows the wall as it scrolls under a resting cursor.
 
 ### Adding media
 
-1. Drop photos into `assets/media/` (any size; tiles crop to 16:10) and add a `photo(...)` line.
-2. Drop clips into `assets/media/` and add a `video(...)` line. Each video needs a poster still in `assets/posters/`
-   with the same number — generate them all with:
+1. Drop photos / clips into `assets/media/` (any size) and add a `photo(...)` / `video(...)` line.
+2. Build the wall stills (colour + faded grayscale, 640×400) — the wall only ever loads these, never the originals:
 
 ```bash
-python tools/posters.py
+python tools/tiles.py
 ```
+
+3. After editing `css/` or `js/`, run `python tools/bump.py` so browsers pick up the new files instead of cached ones.
 
 ## Booking
 
@@ -83,5 +85,4 @@ Routes are hash-based (`/#/about`, `/#/event/red-room`) so no server config is n
 - Scroll / trackpad — move the wall; keep going past the top or bottom to change section
 - Drag — shift the wall (with inertia and tilt); drag past an edge and release to change section
 - Arrow keys / Page Up-Down — step by one tile
-- Hover — full colour + title · year
-- Click — open the event
+- Hover / touch — full colour + title (videos play in place); the highlight follows the cursor as the wall scrolls

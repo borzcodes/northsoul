@@ -20,7 +20,7 @@
   const body = document.body;
 
   /* Wall tiles: the photos + videos from data.js, repeated to fill the wall */
-  const WALL_REPEAT = TOUCH ? 2 : 4;
+  const WALL_REPEAT = 4;
   const TILES = [];
   for (let r = 0; r < WALL_REPEAT; r++) TILES.push(...MEDIA);
 
@@ -42,7 +42,7 @@
       this.progress = 1;
       this.anim = null;
       this.mode = 'archive'; // 'intro' | 'archive' | 'ghost'
-      this.flat = TOUCH;     // 2D grid on touch devices
+      this.flat = false;
       this.hidden = false;   // skip rendering while covered
       this.hover = null;
       this.onHover = null;
@@ -57,7 +57,7 @@
     layout() {
       const vw = window.innerWidth, vh = window.innerHeight;
       this.vw = vw; this.vh = vh;
-      const fit = vw < 560 ? 2 : vw < 760 ? 3 : vw < 1000 ? 4 : 5;
+      const fit = vw < 560 ? 3 : vw < 760 ? 4 : 5;
       this.cellW = vw / fit;
       this.cellH = this.cellW * 0.625; // 16:10 tiles (cell = tile + gap)
       this.gap = Math.round(this.cellW * 0.068);
@@ -88,20 +88,34 @@
     setItems(items) {
       for (const t of this.tiles) t.el.remove();
       this.hover = null;
-      this.tiles = items.map((item, i) => {
+      this.tiles = items.map((item) => {
         const el = document.createElement('div');
         el.className = 'tile' + (item.video ? ' tile--video' : '');
+        // resting look (grayscale, faded) is baked into a second still: no
+        // filters at raster time, which is what keeps scrolling hitch-free
+        const gray = document.createElement('img');
+        gray.className = 'tile__g';
+        gray.src = item.src.replace(/\.jpg$/i, '.g.jpg');
+        gray.alt = '';
         const img = document.createElement('img');
-        img.draggable = false;
-        img.decoding = 'async';
-        img.loading = i < 30 ? 'eager' : 'lazy';
+        img.className = 'tile__c';
         img.src = item.src;
         img.alt = item.title;
-        el.appendChild(img);
+        for (const i of [gray, img]) { i.draggable = false; i.decoding = 'async'; i.loading = 'eager'; }
+        el.append(gray, img);
         this.inner.appendChild(el);
-        return { el, img, item, video: null, sc: null, col: 0, row: 0, off: false, tf: '', os: '' };
+        return { el, img, gray, item, video: null, sc: null, col: 0, row: 0, off: false, tf: '', os: '' };
       });
       this.layout();
+      // decode every still once, up front, so first paint never stalls a scroll
+      const seen = new Set();
+      for (const t of this.tiles) {
+        for (const i of [t.gray, t.img]) {
+          if (seen.has(i.src)) continue;
+          seen.add(i.src);
+          if (i.decode) i.decode().catch(() => {});
+        }
+      }
     }
 
     /* Random 3D positions used for the hero → wall gather. */
@@ -158,16 +172,38 @@
 
     setHover(tile) {
       if (this.hover === tile) return;
+      clearTimeout(this._playTimer);
       if (this.hover) {
         this.hover.el.classList.remove('is-hover');
         this.stopVideo(this.hover);
       }
       this.hover = tile;
       if (tile) {
-        tile.el.classList.add('is-hover');
-        if (tile.item.video) this.playVideo(tile);
+        tile.el.classList.add('is-hover');      // colour: immediately
+        if (tile.item.video) {
+          // the clip starts after a beat and only once the wall has stopped
+          // moving, so sweeping / flicking never spins up players mid-motion —
+          // colour is still instant
+          const arm = () => {
+            if (this.hover !== tile) return;
+            if (Math.abs(this.vx) + Math.abs(this.vy) > 0.6) { this._playTimer = setTimeout(arm, 90); return; }
+            this.playVideo(tile);
+          };
+          this._playTimer = setTimeout(arm, this.touching ? 200 : 90);
+        }
       }
       if (this.onHover) this.onHover(tile ? tile.item : null);
+    }
+
+    /* The tile under a screen point (works while the pointer is captured). */
+    tileAt(x, y) {
+      const el = document.elementFromPoint(x, y);
+      const tEl = el && el.closest('.tile');
+      return tEl ? this.tiles.find((t) => t.el === tEl) : null;
+    }
+    hoverAt(x, y) {
+      const t = this.tileAt(x, y);
+      if (t) this.setHover(t);
     }
 
     /* Video tiles show their poster; the clip itself is created on first
@@ -201,12 +237,13 @@
     /* Warm the browser cache with the clips so hover starts instantly.
        Desktop only (no hover on touch), one file at a time, low priority. */
     prefetchVideos() {
-      if (this._prefetched || window.matchMedia('(hover: none)').matches) return;
-      if (navigator.connection && navigator.connection.saveData) return;
+      if (this._prefetched) return;
+      if (navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || ''))) return;
+      if (TOUCH) return; // phones: clips load on touch, not up front
       this._prefetched = true;
       const urls = [...new Set(this.tiles.map((t) => t.item.video).filter(Boolean))];
       // wait until every tile image is in, then trickle the clips one by one
-      const imgs = this.tiles.map((t) => t.img);
+      const imgs = this.tiles.flatMap((t) => [t.gray, t.img]);
       const ready = Promise.all(imgs.map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
       ready.then(() => setTimeout(next, 1500));
       const next = () => {
@@ -231,22 +268,33 @@
           x: e.clientX, y: e.clientY, tx: this.tx, ty: this.ty, rawY: this.ty,
           lastX: e.clientX, lastY: e.clientY, lastT: performance.now(),
           vx: 0, vy: 0, moved: false,
-          tile: e.target.closest('.tile'),
           touch: e.pointerType === 'touch',
         };
+        this.touching = down.touch;
+        this.pointer = { x: e.clientX, y: e.clientY };
+        // the card under the finger / cursor lights up the moment it is touched
+        this.hoverAt(e.clientX, e.clientY);
         try { el.setPointerCapture(e.pointerId); } catch (_) { /* synthetic / lost pointer */ }
+      });
+
+      el.addEventListener('pointerover', (e) => {
+        if (this.mode !== 'archive' || down) return;
+        const tEl = e.target.closest('.tile');
+        if (tEl) this.setHover(this.tiles.find((t) => t.el === tEl));
       });
 
       el.addEventListener('pointermove', (e) => {
         this.px = (e.clientX / this.vw) * 2 - 1;
         this.py = (e.clientY / this.vh) * 2 - 1;
+        this.pointer = { x: e.clientX, y: e.clientY };
         if (down) {
           const dx = e.clientX - down.x, dy = e.clientY - down.y;
           if (!down.moved && Math.hypot(dx, dy) > 5) {
             down.moved = true;
             el.classList.add('is-dragging');
-            this.setHover(null);
           }
+          // whatever passes under the finger / cursor while dragging lights up
+          this.hoverAt(e.clientX, e.clientY);
           if (down.moved) {
             down.rawY = down.ty + dy;
             this.ty = rubber(down.rawY, this.minY, 0);
@@ -274,16 +322,18 @@
           // inertia
           this.tx = clamp(this.tx + down.vx * 14, -this.maxX, this.maxX);
           this.ty = clamp(this.ty + down.vy * 14, this.minY, 0);
-        } else if (down.tile && down.touch) {
-          // no hover on touch screens: a tap toggles the tile (colour / play)
-          const t = this.tiles.find((t) => t.el === down.tile);
-          this.setHover(this.hover === t ? null : t);
         }
+        // on touch the last card touched stays lit until the next touch
         down = null;
+        this.touching = false;
       };
       el.addEventListener('pointerup', up);
       el.addEventListener('pointercancel', up);
-      el.addEventListener('pointerleave', (e) => { if (!down && e.pointerType !== 'touch') this.setHover(null); });
+      el.addEventListener('pointerleave', (e) => {
+        if (down || e.pointerType === 'touch') return;
+        this.pointer = null;
+        this.setHover(null);
+      });
 
       let rt, lastW = window.innerWidth, lastH = window.innerHeight;
       window.addEventListener('resize', () => {
@@ -300,7 +350,7 @@
 
     loop(now) {
       const prevX = this.ox, prevY = this.oy;
-      const k = REDUCED ? 1 : 0.1;
+      const k = REDUCED ? 1 : this.touching ? 0.45 : 0.1;
       this.ox = lerp(this.ox, this.tx, k);
       this.oy = lerp(this.oy, this.ty, k);
       this.vx = this.ox - prevX;
@@ -319,7 +369,11 @@
       if (Math.abs(this.tx - this.ox) < 0.05) this.ox = this.tx;
       if (Math.abs(this.ty - this.oy) < 0.05) this.oy = this.ty;
 
-      if (!this.hidden) this.render();
+      if (!this.hidden) {
+        const moved = this.render();
+        // the wall slid under a resting cursor: light whatever is under it now
+        if (moved && this.pointer && this.mode === 'archive' && !this.touching) this.hoverAt(this.pointer.x, this.pointer.y);
+      }
       requestAnimationFrame(this.loop);
     }
 
@@ -336,7 +390,7 @@
 
       // nothing moved since the last frame → skip all the DOM work
       const sig = `${ox.toFixed(1)}|${oy.toFixed(1)}|${p.toFixed(4)}|${tiltX.toFixed(1)}|${tiltY.toFixed(1)}`;
-      if (!force && sig === this._sig) return;
+      if (!force && sig === this._sig) return false;
       this._sig = sig;
 
       const tileW = cellW - gap, tileH = cellH - gap;
@@ -344,21 +398,22 @@
       // horizontally, a gentler one vertically) so edge tiles tilt away
       // without ever overlapping their neighbours. Touch devices get a
       // flat grid: far cheaper and nothing to hover anyway.
-      const RX = vw * 1.35, RY = vh * 2.0;
+      const RX = vw * (vw < 560 ? 1.9 : 1.35), RY = vh * 2.0;
       const DEG = 180 / Math.PI;
       const flat = this.flat;
-      const margin = vh * (p < 1 ? 1.1 : 0.85);
+      const margin = vh * (p < 1 ? 1.1 : vw < 560 ? 0.72 : 0.85);
 
       for (const t of tiles) {
         // flat grid position of the tile centre, relative to the viewport centre
         const u = this.left + t.col * cellW + ox + cellW / 2 - vw / 2;
         const v = this.top + t.row * cellH + oy + cellH / 2 - vh / 2;
-        // tiles that end up well outside the viewport are not worth animating or drawing
+        // tiles well outside the viewport: leave their layer alone (no visibility
+        // toggling — that tears layers down and rebuilds them, which hitches)
         if (v < -margin || v > margin) {
-          if (!t.off) { t.el.style.visibility = 'hidden'; t.off = true; }
+          if (!t.off) { t.off = true; if (t.os !== '0') { t.el.style.opacity = '0'; t.os = '0'; } }
           continue;
         }
-        if (t.off) { t.el.style.visibility = ''; t.off = false; }
+        t.off = false;
 
         let gx, gy, gz, ry, rx;
         if (flat) {
@@ -383,6 +438,9 @@
           rx = lerp(s.rx, rx, p);
           ry = lerp(s.ry, ry, p);
           o = lerp(s.o, 1, easeOutCubic(p));
+          // keep parked tiles just barely drawn while the hero covers them, so the
+          // compositor has already rasterised every layer before the gather starts
+          if (this.mode === 'intro' && o < 0.02) o = 0.02;
         }
         const tf = flat && p >= 1
           ? `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`
@@ -394,6 +452,7 @@
 
       const it = flat ? '' : `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
       if (it !== this._it) { this.inner.style.transform = it; this._it = it; }
+      return true;
     }
   }
 
@@ -446,6 +505,7 @@
      Archive
      ------------------------------------------------------------ */
   const wall = new Wall($('#wall'));
+  window.__wall = wall; // handy for debugging in the console
   const ftrTitle = $('#ftrTitle');
   const ftrCount = $('#ftrCount');
   const caption = (m) => m.title + (m.year ? ` · ${m.year}` : '');
