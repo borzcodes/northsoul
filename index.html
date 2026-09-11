@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NorthSoul — DJ + producer</title>
+  <meta name="description" content="NorthSoul — Moroccan DJ and producer, playing internationally. Archive of nights, next event and bookings.">
+  <meta name="theme-color" content="#f4f3ef">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f3ef'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' fill='%23101010'%3EN%3C/text%3E%3C/svg%3E">
+</head>
+<body class="route-archive">
+
+  <!-- Instagram glyph, reused by header + footer -->
+  <svg hidden aria-hidden="true">
+    <symbol id="ico-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.4" cy="6.6" r="0.9" fill="currentColor" stroke="none"/>
+    </symbol>
+  </svg>
+
+  <!-- 3D archive wall (lives behind everything, reused by hero / archive / 404) -->
+  <div class="wall" id="wall" aria-label="Archive"><div class="wall__inner"></div></div>
+
+  <!-- Landing hero: title alone → scroll splits it and reveals the portrait → scroll again to enter the wall -->
+  <div class="hero" id="hero" aria-hidden="true">
+    <h1 class="hero__name hero__name--l serif" data-name="0">North</h1>
+    <h1 class="hero__name hero__name--r serif" data-name="1">Soul</h1>
+    <p class="hero__tag" data-tagline>DJ + producer</p>
+    <p class="hero__sub" data-about-sub>Moroccan DJ, playing worldwide</p>
+    <div class="hero__img"><img data-about-img alt=""></div>
+    <button class="hero__cta" id="heroCta" type="button">Scroll</button>
+  </div>
+
+  <!-- Header -->
+  <header class="hdr">
+    <div class="hdr__brand">
+      <a class="hdr__back" href="#/">⟵ Back</a>
+      <a class="hdr__logo" href="#/" data-logo>North<br>Soul</a>
+      <span class="hdr__tag" data-tagline-2>DJ +<br>producer</span>
+    </div>
+    <nav class="hdr__nav" id="nav">
+      <a href="#/" data-route="archive">Archive</a>
+      <a href="#/about" data-route="about">About</a>
+      <a href="#/book" data-route="book">Book</a>
+      <a class="ico" data-instagram href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg width="16" height="16"><use href="#ico-ig"/></svg></a>
+    </nav>
+  </header>
+
+  <!-- Archive footer (filters) -->
+  <footer class="ftr">
+    <div class="ftr__hint">Scroll down · Drag to shift</div>
+    <div class="ftr__center">
+      <div class="ftr__title" id="ftrTitle"></div>
+      <nav class="ftr__filters" id="filters"></nav>
+    </div>
+    <div class="ftr__count" id="ftrCount">↓ 0</div>
+  </footer>
+
+  <!-- Views -->
+  <main class="views" id="views">
+
+    <section class="view view--about" data-view="about">
+      <div class="about__hero">
+        <p class="about__sub" data-about-sub>Moroccan DJ, playing worldwide</p>
+        <div class="about__img"><img data-about-img alt="NorthSoul portrait"></div>
+        <h1 class="about__name about__name--l serif" data-name="0">North</h1>
+        <h1 class="about__name about__name--r serif" data-name="1">Soul</h1>
+      </div>
+      <div class="about__body">
+        <div class="about__lead">
+          <h2 class="serif">From Morocco to the rooms that never sleep.</h2>
+          <p>NorthSoul is a Moroccan DJ and producer based in Morocco and booked across Europe and beyond — nights in France, Spain and Turkey, from intimate red-lit rooms to festival-size floors.</p>
+          <p>No pre-planned playlists. Every set is read off the floor and built as it happens — which is why the same night never plays twice.</p>
+        </div>
+        <div class="about__col">
+          <h3>Plays</h3>
+          <ul>
+            <li>House · deep house</li>
+            <li>Afro house · organic</li>
+            <li>Melodic techno · progressive</li>
+            <li>Disco · edits</li>
+            <li>Open format for private events</li>
+          </ul>
+        </div>
+        <div class="about__col">
+          <h3>Played</h3>
+          <ul>
+            <li>Morocco — home base</li>
+            <li>Spain — Toy Room Club, Madrid</li>
+            <li>France</li>
+            <li>Turkey</li>
+          </ul>
+        </div>
+        <div class="about__col">
+          <h3>Contact</h3>
+          <ul>
+            <li><a data-mail href="#">booking@northsoul.dj</a></li>
+            <li><a data-whatsapp href="#" target="_blank" rel="noopener">WhatsApp ↗</a></li>
+            <li><a href="#/book">Book the night →</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="view view--book" data-view="book">
+
+      <!-- Next event -->
+      <div class="next" id="nextEvent">
+        <div class="next__banner"><img data-next-banner alt="Next event banner"></div>
+        <div class="next__body">
+          <p class="next__label">Next event</p>
+          <h1 class="next__title serif" data-next-title>—</h1>
+          <p class="next__date" data-next-date>Date to be announced</p>
+          <p class="next__meta" data-next-meta></p>
+          <a class="btn btn--lg" data-next-link href="#" target="_blank" rel="noopener" hidden>Tickets ↗</a>
+        </div>
+      </div>
+
+      <!-- Book -->
+      <div class="book" id="book">
+        <div class="book__hero">
+          <h2 class="serif">Book the night.</h2>
+          <p>Clubs, festivals, private parties and corporate events — in Morocco or anywhere with a flight. One message with the date, city and set length is all it takes; every request gets a personal reply.</p>
+        </div>
+        <div class="book__actions">
+          <a class="btn btn--lg" data-mail-cta href="#">Email booking@northsoul.dj ↗</a>
+          <a class="btn btn--lg" data-whatsapp href="#" target="_blank" rel="noopener">WhatsApp ↗</a>
+        </div>
+        <ul class="book__notes">
+          <li>Sets from 60 minutes to all night</li>
+          <li>Own controller + backup; plays any club-standard setup</li>
+          <li>Available for travel — flights and stay quoted separately</li>
+          <li>Deposit secures the date</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <section class="view view--404" data-view="404">
+      <div class="nf">
+        <h1 class="nf__brand" data-brand-lines>North<br>Soul</h1>
+        <div class="nf__code">404 · track absent</div>
+        <h2 class="nf__title serif">The track you asked for has left the deck.</h2>
+        <p class="nf__hint">Move to disturb the archive</p>
+        <a class="nf__link" href="#/"><span>Return to the archive</span><span>↗</span></a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Site footer (pages only; the wall has its own) -->
+  <footer class="site-ftr">
+    <a class="site-ftr__logo" href="#/" data-logo-inline>NorthSoul</a>
+    <nav class="site-ftr__nav">
+      <a href="#/about">About</a>
+      <a href="#/book">Book</a>
+      <a class="ico" data-instagram href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg width="16" height="16"><use href="#ico-ig"/></svg></a>
+    </nav>
+    <p class="site-ftr__legal">© <span data-year>2026</span> <span data-brand>NorthSoul</span>. All rights reserved.</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
