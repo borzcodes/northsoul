@@ -690,6 +690,8 @@
         wall.hidden = true;
         showHero(true);
         lockInput(450);
+        // logo click: carry on past the formed hero, back to the joined title
+        if (heroToStart) { heroToStart = false; heroTarget = 0; }
       },
     });
   }
@@ -719,6 +721,20 @@
      One scroll to rule them: hero ⇄ wall ⇄ Book
      ------------------------------------------------------------ */
   let returnToBottom = false; // Book → wall lands at the wall's end
+  let wantHero = false;       // logo clicked from another page: land on the hero, not the wall
+  let heroToStart = false;    // logo clicked on the wall: after the tiles scatter, rejoin the title
+
+  /* Logo → the hero (the "NorthSoul" title), from anywhere. */
+  function goHero() {
+    if (current === 'archive') {
+      if (phase === 'wall' && !wall.anim) { heroToStart = true; leaveWallUp(); }
+      else if (phase === 'hero') { heroAuto = false; heroOverflow = 0; heroTarget = 0; }
+      return;
+    }
+    wantHero = true;
+    location.hash = '#/';
+  }
+  $$('[data-logo], [data-logo-inline]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); goHero(); }));
   let bookAcc = 0;            // scrolled up past the top of the Book page
 
   function goBook() {
@@ -803,7 +819,8 @@
         wall.mode = 'archive';
         wall.jumpTo(wall.minY);
         lockInput(500);
-      } else if (!introDone) {
+      } else if (!introDone || wantHero) {
+        wantHero = false;
         startHero();
       } else {
         wall.mode = 'archive';
@@ -844,6 +861,9 @@
 
   window.addEventListener('hashchange', route);
   route();
+
+  // console debugging: current phase / hero progress
+  window.__ns = { get phase() { return phase; }, get heroP() { return heroP; }, get heroTarget() { return heroTarget; }, get route() { return current; } };
 
   // 404: "move to disturb the archive"
   window.addEventListener('pointermove', (e) => {
