@@ -1,13 +1,15 @@
 # NorthSoul — DJ site
 
 A static, dependency-free site (plain HTML/CSS/JS). White edition of the reference portfolio:
-scroll-driven landing hero, full-bleed curved 3D wall of photos + videos, About, next event + booking, 404.
+scroll-driven landing hero, a vertical 3D "stack" of photos + clips with a player, About, next event + booking, 404.
 
 **One continuous scroll:** "NorthSoul" alone → scrolling parts the two words and reveals the portrait
-(the About hero forms, header fades in) → scrolling once more sends the tiles flying in to form the wall
-→ the wall (the media in `assets/media`, repeated ×4) → scrolling past its end opens the Book page
-(next event, then "Book the night" with Email / WhatsApp buttons, then the footer).
-It all reverses: scroll up at the top of Book to return to the wall, and at the top of the wall to bring the hero back.
+(the About hero forms, header fades in) → scrolling once more sends the cards flying in to form the stack
+→ the stack: one card faces you, the previous ones lie flattened above, the next waits below and rolls up as
+you scroll (videos play muted in place; click / tap the facing card to open it in the player) → past the last card, the Book page:
+a **Trusted by** strip of venue logos, then
+(a pinned three-step story — Next event · Book the night · Get in touch — with a wheel of photos that turns per step, then the footer).
+It all reverses: scroll up at the top of Book to return to the last card, and past the first card to bring the hero back.
 
 ## Run locally
 
@@ -28,7 +30,7 @@ css/style.css   theme, layout, responsive rules
 js/data.js      ← ALL CONTENT LIVES HERE (brand, links, next event, wall media)
 assets/         portrait, media/ (photos + videos), tiles/ (640x400 stills: colour + baked grayscale)
 tools/          tiles.py — builds the stills; bump.py — refreshes the cache-buster on css/js links
-js/app.js       wall engine, landing hero, scroll flow, router
+js/app.js       stack engine + player, landing hero, scroll flow, router
 ```
 
 ## Editing content — `js/data.js`
@@ -41,27 +43,31 @@ js/app.js       wall engine, landing hero, scroll flow, router
 | `tagline` | "DJ + producer" — header + landing hero |
 | `aboutSubtitle`, `aboutImage` | About hero (also the landing hero) |
 | `bookingEmail`, `whatsapp`, `instagram` | the Email / WhatsApp buttons, About contact list, header + footer icon |
+| `highlights` | how many of the first `NS.MEDIA` entries the stack opens with; "See all" (top-right) brings in the rest |
 | `nextEvent` | title, city, ISO `date` (`''` while unannounced), note, banner image, optional `link` |
 
-**`NS.MEDIA`** — the wall. One entry per tile, in wall order (the list is shown 4× to fill the wall;
-change `WALL_REPEAT` in `js/app.js` to repeat more or less):
+**`NS.VENUES`** — the "Trusted by" strip: `{ name, city, logo }`. `logo` is an ink cut-out PNG (transparent, black) in
+`assets/logos/`; leave it out and the name is set in type instead. The strip loops slowly and pauses on hover.
+
+**`NS.MEDIA`** — the stack, in order (top to bottom). The first `highlights` entries are what visitors see first — keep those to performance shots (posters and portraits belong elsewhere):
 
 ```js
-photo('06', 'BOLD.', 2025)          // assets/media/photo-06.jpg
-video('01', 'BOLD.')                // assets/media/video-01.mp4 + assets/posters/video-01.jpg
-video('05', 'Late set', null, 5)    // 4th arg = second the poster still was taken at (default 1)
+photo('06', 'BOLD.', 2025)          // assets/media/photo-06.jpg  → tiles/photo-06.jpg
+video('01', 'BOLD.')                // assets/media/video-01.mp4  → tiles/video-01.jpg (poster)
+video('05', 'Late set', null, 5)    // 4th arg = second the still was taken at (tools/tiles.py prints it)
+video('16', 'Flags up', null, 1, 82)   // 5th arg = focus: % from the top the card centres on (50 = middle; the DJ is low in booth shots)
 ```
 
-- Tiles are grayscale. Hover a photo → colour; hover a video → colour + it plays (muted, looping).
-  On touch screens a tap does the same. There are no detail pages or filters.
-- `year` is optional.
-- Phones get the same curved wall with 3 columns. Touching a card lights it, sliding a finger across cards while scrolling lights each one as it passes, and the last one touched stays lit.
-- Desktop: the card under the cursor lights the instant the cursor enters it — and the highlight follows the wall as it scrolls under a resting cursor.
+- One card faces you at a time; scroll, drag, arrow keys or click another card to move. Videos play muted
+  in place when they reach the front. Clicking / tapping the facing card opens the **player**: blurred backdrop,
+  Back, title, type · duration, play / pause (space bar), a progress line, and the Instagram link.
+- `year` is optional. Bottom-left shows the current title + type, bottom-right the counter, top-right two thumbnails.
+- Phones: same stack with wider cards; drag to move, tap the facing card to open.
 
 ### Adding media
 
 1. Drop photos / clips into `assets/media/` (any size) and add a `photo(...)` / `video(...)` line.
-2. Build the wall stills (colour + faded grayscale, 640×400) — the wall only ever loads these, never the originals:
+2. Build the card stills (640×400, cropped around each clip's `focus`) — the stack only ever loads these, never the originals:
 
 ```bash
 python tools/tiles.py
@@ -82,7 +88,6 @@ Routes are hash-based (`/#/about`, `/#/event/red-room`) so no server config is n
 
 ## Controls (archive)
 
-- Scroll / trackpad — move the wall; keep going past the top or bottom to change section
-- Drag — shift the wall (with inertia and tilt); drag past an edge and release to change section
-- Arrow keys / Page Up-Down — step by one tile
-- Hover / touch — full colour + title (videos play in place); the highlight follows the cursor as the wall scrolls
+- Scroll / trackpad / drag — move through the cards (snaps to the nearest); keep going past the first or last card to change section
+- Arrow keys / Page Up-Down — one card at a time
+- Click / tap the facing card — open it in the player (Esc or Back to close, space to play / pause)

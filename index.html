@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1789174955">
+  <link rel="stylesheet" href="css/style.css?v=1789403129">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f3ef'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' fill='%23101010'%3EN%3C/text%3E%3C/svg%3E">
 </head>
 <body class="route-archive">
@@ -23,8 +23,24 @@
     </symbol>
   </svg>
 
-  <!-- 3D archive wall (lives behind everything, reused by hero / archive / 404) -->
-  <div class="wall" id="wall" aria-label="Archive"><div class="wall__inner"></div></div>
+  <!-- The archive: a vertical stack of photos + clips. One faces you, the
+       previous ones lie flattened above, the next waits below. -->
+  <div class="stack" id="stack" aria-label="Archive"><div class="stack__inner"></div></div>
+
+  <!-- Player: the current item, large, on a blurred backdrop -->
+  <div class="player" id="player" hidden>
+    <div class="player__bg"><img alt=""></div>
+    <button class="player__back" type="button">Back</button>
+    <div class="player__line"><span></span></div>
+    <p class="player__title serif" id="playerTitle"></p>
+    <div class="player__stage" id="playerStage"></div>
+    <div class="player__side">
+      <p class="player__meta" id="playerMeta"></p>
+      <a class="player__link" data-instagram href="#" target="_blank" rel="noopener">Instagram ↗</a>
+    </div>
+    <button class="player__play" id="playerPlay" type="button" hidden><span class="player__ring"></span><span class="player__label">Pause</span></button>
+    <div class="player__index"><img alt=""></div>
+  </div>
 
   <!-- Landing hero: title alone → scroll splits it and reveals the portrait → scroll again to enter the wall -->
   <div class="hero" id="hero" aria-hidden="true">
@@ -51,14 +67,19 @@
     </nav>
   </header>
 
-  <!-- Archive footer (filters) -->
+  <!-- Archive chrome: what you're looking at (bottom-left), a hint, a counter; thumbnails top-right -->
   <footer class="ftr">
-    <div class="ftr__hint">Scroll down · Drag to shift</div>
-    <div class="ftr__center">
-      <div class="ftr__title" id="ftrTitle"></div>
+    <div class="ftr__now">
+      <span class="ftr__tag" id="nowTag"></span>
+      <span class="ftr__title serif" id="nowTitle"></span>
     </div>
-    <div class="ftr__count" id="ftrCount">↓ 0</div>
+    <div class="ftr__hint">Scroll · Drag · Click to open</div>
+    <div class="ftr__count" id="ftrCount"></div>
   </footer>
+  <div class="index" id="index">
+    <div class="index__thumbs" aria-hidden="true"><img alt=""><img alt=""></div>
+    <button class="index__more" id="seeAll" type="button"></button>
+  </div>
 
   <!-- Views -->
   <main class="views" id="views">
@@ -108,34 +129,62 @@
 
     <section class="view view--book" data-view="book">
 
-      <!-- Next event -->
-      <div class="next" id="nextEvent">
-        <div class="next__banner"><img data-next-banner alt="Next event banner"></div>
-        <div class="next__body">
-          <p class="next__label">Next event</p>
-          <h1 class="next__title serif" data-next-title>—</h1>
-          <p class="next__date" data-next-date>Date to be announced</p>
-          <p class="next__meta" data-next-meta></p>
-          <a class="btn btn--lg" data-next-link href="#" target="_blank" rel="noopener" hidden>Tickets ↗</a>
+      <!-- Trusted by: the rooms he has played, as a slow moving strip -->
+      <section class="trusted" id="trusted">
+        <div class="trusted__head">
+          <p class="trusted__label">Trusted by</p>
+          <p class="trusted__note">Clubs and bars he has played, from Casablanca to Madrid.</p>
         </div>
-      </div>
+        <div class="marquee" aria-label="Venues">
+          <div class="marquee__track" id="venues"></div>
+        </div>
+      </section>
 
-      <!-- Book -->
-      <div class="book" id="book">
-        <div class="book__hero">
-          <h2 class="serif">Book the night.</h2>
-          <p>Clubs, festivals, private parties and corporate events — in Morocco or anywhere with a flight. One message with the date, city and set length is all it takes; every request gets a personal reply.</p>
+      <!-- Pinned story: two steps, a stack of titles bottom-left, the active
+           step's content, and a wheel of photos that turns as you scroll -->
+      <div class="story" id="story">
+        <div class="story__pin">
+          <div class="story__scene">
+            <div class="story__stage" id="storyStage">
+              <div class="wheel wheel--a" data-wheel="a"></div>
+              <div class="wheel wheel--b" data-wheel="b"></div>
+            </div>
+          </div>
+
+          <ol class="story__index" id="storyIndex">
+            <li class="serif is-active"><button type="button" data-step="0">Next event.</button></li>
+            <li class="serif"><button type="button" data-step="1">Book the night.</button></li>
+          </ol>
+
+          <div class="story__panels">
+            <!-- step 1: the poster + the facts -->
+            <div class="story__panel story__panel--event is-active" id="nextEvent">
+              <div class="next__banner"><img data-next-banner alt="Next event banner"></div>
+              <div class="next__facts">
+                <p class="story__kicker" data-next-title>—</p>
+                <div class="rows">
+                  <div class="row"><span>Date</span><span data-next-date>To be announced</span></div>
+                  <div class="row" data-next-row="city"><span>City</span><span data-next-city></span></div>
+                  <div class="row" data-next-row="note"><span>Line-up</span><span data-next-note></span></div>
+                  <a class="row row--link" data-next-link href="#" target="_blank" rel="noopener" hidden><span>Tickets</span><span>Get tickets ↗</span></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- step 2: how a booking works + how to reach him -->
+            <div class="story__panel">
+              <p class="story__text">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight. Send the date, the city and the set length; every request gets a personal reply.</p>
+              <div class="rows rows--contact">
+                <a class="row row--link" data-mail-cta href="#"><span>Email</span><span data-mail-text>booking@northsoul.dj ↗</span></a>
+                <a class="row row--link" data-whatsapp href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span data-whatsapp-text>Message ↗</span></a>
+                <a class="row row--link" data-instagram href="#" target="_blank" rel="noopener"><span>Instagram</span><span data-instagram-text>Instagram ↗</span></a>
+              </div>
+              <p class="story__fine">Sets from 60 minutes to all night · travel quoted separately · a deposit secures the date</p>
+            </div>
+          </div>
+
+          <p class="story__hint">Scroll</p>
         </div>
-        <div class="book__actions">
-          <a class="btn btn--lg" data-mail-cta href="#">Email booking@northsoul.dj ↗</a>
-          <a class="btn btn--lg" data-whatsapp href="#" target="_blank" rel="noopener">WhatsApp ↗</a>
-        </div>
-        <ul class="book__notes">
-          <li>Sets from 60 minutes to all night</li>
-          <li>Own controller + backup; plays any club-standard setup</li>
-          <li>Available for travel — flights and stay quoted separately</li>
-          <li>Deposit secures the date</li>
-        </ul>
       </div>
 
     </section>
@@ -163,7 +212,7 @@
     <p class="site-ftr__legal">© <span data-year>2026</span> <span data-brand>NorthSoul</span>. All rights reserved.</p>
   </footer>
 
-  <script src="js/data.js?v=1789174955"></script>
-  <script src="js/app.js?v=1789174955"></script>
+  <script src="js/data.js?v=1789403129"></script>
+  <script src="js/app.js?v=1789403129"></script>
 </body>
 </html>

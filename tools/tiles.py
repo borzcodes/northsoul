@@ -18,14 +18,32 @@ W, H = 640, 400
 os.makedirs(OUT, exist_ok=True)
 
 
-def crop_16_10(frame):
+def focus_map():
+    """`focus` values from js/data.js (5th argument of video(...)): % from the top to centre the crop on."""
+    import re
+    src = open(os.path.join(ROOT, 'js', 'data.js'), encoding='utf-8').read()
+    out = {}
+    for m in re.finditer(r"video\('(\d+)',((?:[^)(]|\([^)]*\))*)\)", src):
+        parts = [a.strip() for a in re.split(r",(?=(?:[^']*'[^']*')*[^']*$)", m.group(2))]
+        if len(parts) >= 5:
+            try: out['video-' + m.group(1)] = float(parts[4])
+            except ValueError: pass
+    return out
+
+
+FOCUS = focus_map()
+
+
+def crop_16_10(frame, focus=50):
     h, w = frame.shape[:2]
     target = W / H
     if w / h > target:      # too wide → trim sides
         nw = int(h * target); x0 = (w - nw) // 2
         frame = frame[:, x0:x0 + nw]
-    else:                   # too tall → trim top/bottom
-        nh = int(w / target); y0 = (h - nh) // 2
+    else:                   # too tall → keep the band around the focus point
+        nh = int(w / target)
+        y0 = int(round(h * focus / 100 - nh / 2))
+        y0 = max(0, min(h - nh, y0))
         frame = frame[y0:y0 + nh, :]
     return cv2.resize(frame, (W, H), interpolation=cv2.INTER_AREA)
 
@@ -34,7 +52,7 @@ CREAM = (228, 232, 233)   # BGR of the page ground (slightly darkened, as the ti
 
 
 def save(name, frame):
-    tile = crop_16_10(frame)
+    tile = crop_16_10(frame, FOCUS.get(name, 50))
     cv2.imwrite(os.path.join(OUT, name + '.jpg'), tile, [cv2.IMWRITE_JPEG_QUALITY, 82])
     gray = cv2.cvtColor(tile, cv2.COLOR_BGR2GRAY)
     gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR).astype('float32')
