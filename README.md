@@ -49,7 +49,7 @@ js/app.js       stack engine + player, landing hero, scroll flow, router
 | `tagline` | "DJ + producer" — header + landing hero |
 | `aboutSubtitle`, `aboutImage` | the line and the portrait in the landing hero |
 | `bookingEmail`, `whatsapp`, `instagram` | the Email / WhatsApp / Instagram rows (About chapter + Book), header + footer icon |
-| `highlights` | how many of the first `NS.MEDIA` entries the stack opens with; "See all" (top-right) brings in the rest |
+| `highlights` | how many of the first `NS.MEDIA` entries the stack opens with; "More" (top-right) brings in the rest |
 | `nextEvent` | title, city, ISO `date` (`''` while unannounced), note, banner image, optional `link` |
 
 **`NS.VENUES`** — the "Trusted by" strip: `{ name, city, logo }`. `logo` is an ink cut-out PNG (transparent, black) in

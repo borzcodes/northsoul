@@ -229,29 +229,37 @@
         this.index = idx;
         if (this.onChange) this.onChange(idx, this.cards[idx].item);
       }
-      const settled = this.mode === 'archive' && Math.abs(this.cur - idx) < 0.03 && this.progress >= 1;
+      // the clip on the facing card plays as soon as it comes to the front — mid-scroll, not
+      // only once the stack has settled (a little hysteresis so it doesn't flicker at the edge);
+      // the next card's clip is fetched ahead so it starts the moment it arrives
+      const live = this.mode === 'archive' && this.progress >= 1 && !this.hidden && !this.paused;
       for (const c of this.cards) {
-        const want = settled && c.i === idx && !!c.item.video && !this.hidden && !this.paused;
+        if (!c.item.video) continue;
+        const d = Math.abs(c.i - this.cur);
+        const want = live && (c.on ? d < 0.62 : d < 0.42);
         if (want && !c.on) this.play(c);
         else if (!want && c.on) this.stop(c);
+        else if (live && !c.video && c.i === idx + 1) this.warm(c);
       }
 
       if (!this.hidden) this.render();
       requestAnimationFrame(this.loop);
     }
 
+    warm(c) {
+      const item = c.item;
+      const v = document.createElement('video');
+      v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+      v.poster = item.src;
+      v.style.objectPosition = `50% ${item.focus || 50}%`;
+      v.src = item.video + '#t=' + (item.posterAt || 1);
+      v.addEventListener('playing', () => { if (c.on) c.el.classList.add('is-playing'); });
+      c.el.appendChild(v);
+      c.video = v;
+    }
     play(c) {
       const item = c.item;
-      if (!c.video) {
-        const v = document.createElement('video');
-        v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
-        v.poster = item.src;
-        v.style.objectPosition = `50% ${item.focus || 50}%`;
-        v.src = item.video + '#t=' + (item.posterAt || 1);
-        v.addEventListener('playing', () => { if (c.on) c.el.classList.add('is-playing'); });
-        c.el.appendChild(v);
-        c.video = v;
-      }
+      if (!c.video) this.warm(c);
       c.on = true;
       if (c.video.readyState >= 2) { c.video.currentTime = item.posterAt || 1; c.el.classList.add('is-playing'); }
       const p = c.video.play();
@@ -467,7 +475,7 @@
 
   function labelSeeAll() {
     seeAll.hidden = HIGHLIGHTS.length === MEDIA.length;
-    seeAll.textContent = showingAll ? 'Highlights only' : `See all ${MEDIA.length}`;
+    seeAll.textContent = showingAll ? 'Less' : 'More';
   }
   labelSeeAll();
   seeAll.addEventListener('click', () => {
