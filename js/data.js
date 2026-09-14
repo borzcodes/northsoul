@@ -16,7 +16,7 @@ NS.CONFIG = {
   // Get in touch (Book page + About + footer)
   bookingEmail: 'booking@northsoul.dj',
   whatsapp: '+212 6 00 00 00 00',      // international format; spaces are fine
-  instagram: 'https://instagram.com/northsoul',
+  instagram: 'https://www.instagram.com/northsoul3/',
 
   // Next event — shown at the top of the Book page.
   // `date` is ISO (YYYY-MM-DD); leave it '' while unannounced. `link` is optional (tickets / event page).

@@ -1,15 +1,20 @@
 # NorthSoul — DJ site
 
 A static, dependency-free site (plain HTML/CSS/JS). White edition of the reference portfolio:
-scroll-driven landing hero, a vertical 3D "stack" of photos + clips with a player, About, next event + booking, 404.
+scroll-driven landing hero, a dark About chapter on two clips, a vertical 3D "stack" of photos + clips with a player, next event + booking, 404.
 
 **One continuous scroll:** "NorthSoul" alone → scrolling parts the two words and reveals the portrait
-(the About hero forms, header fades in) → scrolling once more sends the cards flying in to form the stack
+(header fades in) → scrolling once more fades in the **About** chapter: an index of four rows on the right —
+Story · Sound · Stages · Contact, set in Archivo — with a cream bar that slides to the row you hover, scroll or tap; the panel on the left answers each one
+(who he is, what he plays, where he has played, how to get in touch) and the two clips behind
+(`assets/media/video-17.mp4`, `video-05.mp4`) switch with a dip to black → past the last word the cards fly in to form the stack
 → the stack: one card faces you, the previous ones lie flattened above, the next waits below and rolls up as
 you scroll (videos play muted in place; click / tap the facing card to open it in the player) → past the last card, the Book page:
 a **Trusted by** strip of venue logos, then
 (a pinned three-step story — Next event · Book the night · Get in touch — with a wheel of photos that turns per step, then the footer).
-It all reverses: scroll up at the top of Book to return to the last card, and past the first card to bring the hero back.
+It all reverses: scroll up at the top of Book to return to the last card, past the first card to bring the About chapter back
+(on its last word), and past its first word to bring the hero back. The logo always returns to the title; **About** in the header
+jumps to the chapter from anywhere.
 
 ## Run locally
 
@@ -19,12 +24,13 @@ Any static server works. From this folder:
 python -m http.server 5173
 ```
 
-Then open <http://localhost:5173>. (The landing hero plays once per browser session; clear session storage or open a new tab to see it again.)
+Then open <http://localhost:5173>. The landing hero plays on every load. After editing `css/style.css` or `js/app.js`
+run `python tools/bump.py` so browsers pick up the new files (it refreshes the `?v=` on the links in `index.html`).
 
 ## Structure
 
 ```
-index.html      shell + all views (hero/archive, about, book, 404) + footer
+index.html      shell: hero, About chapter (its copy lives here), archive chrome, player, Book + 404 views, footer
 404.html        redirect used by static hosts for unknown paths
 css/style.css   theme, layout, responsive rules
 js/data.js      ← ALL CONTENT LIVES HERE (brand, links, next event, wall media)
@@ -41,8 +47,8 @@ js/app.js       stack engine + player, landing hero, scroll flow, router
 | --- | --- |
 | `nameParts` | the two big serif words (`['North','Soul']`) |
 | `tagline` | "DJ + producer" — header + landing hero |
-| `aboutSubtitle`, `aboutImage` | About hero (also the landing hero) |
-| `bookingEmail`, `whatsapp`, `instagram` | the Email / WhatsApp buttons, About contact list, header + footer icon |
+| `aboutSubtitle`, `aboutImage` | the line and the portrait in the landing hero |
+| `bookingEmail`, `whatsapp`, `instagram` | the Email / WhatsApp / Instagram rows (About chapter + Book), header + footer icon |
 | `highlights` | how many of the first `NS.MEDIA` entries the stack opens with; "See all" (top-right) brings in the rest |
 | `nextEvent` | title, city, ISO `date` (`''` while unannounced), note, banner image, optional `link` |
 
@@ -83,11 +89,13 @@ message). Set `bookingEmail` and `whatsapp` in `NS.CONFIG`.
 ## Deploying
 
 Static hosting: Netlify, Vercel, GitHub Pages, Cloudflare Pages — upload the folder as-is.
-Routes are hash-based (`/#/about`, `/#/event/red-room`) so no server config is needed.
+Routes are hash-based (`/#/`, `/#/book/night`; `/#/about` jumps to the chapter) so no server config is needed.
 `404.html` assumes the site is served from the domain root; if it lives in a sub-folder, change `'/#/404'` inside it to that folder.
 
 ## Controls (archive)
 
+- About chapter — hover a word (desktop) or tap it; scroll / arrow keys step one word at a time; keep pushing at the
+  first or last word to leave. The text of the four answers is plain HTML in `index.html` (`.about__panel`).
 - Scroll / trackpad / drag — move through the cards (snaps to the nearest); keep going past the first or last card to change section
 - Arrow keys / Page Up-Down — one card at a time
 - Click / tap the facing card — open it in the player (Esc or Back to close, space to play / pause)

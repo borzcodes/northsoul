@@ -3,9 +3,10 @@
    - Stack: the archive as a vertical cover flow — one card facing you,
      the previous ones flattened above, the next lying below. Click to open
      it in the player (blurred backdrop, play / pause).
-   - Hero: scroll-driven landing (title parts → portrait → cards fly into the stack)
-   - One continuous scroll: hero ⇄ stack ⇄ Book
-   - Router: hash routes (#/, #/about, #/book, 404)
+   - Hero: scroll-driven landing (title parts → portrait)
+   - About: the dark chapter after it — four words, two clips behind them
+   - One continuous scroll: hero ⇄ about ⇄ stack ⇄ Book
+   - Router: hash routes (#/, #/book, 404; #/about jumps to the chapter)
    ============================================================ */
 (() => {
   'use strict';
@@ -82,7 +83,7 @@
     layout() {
       const vw = window.innerWidth, vh = window.innerHeight;
       this.vw = vw; this.vh = vh;
-      this.W = vw < 640 ? Math.round(vw * 0.76) : Math.round(clamp(vw * 0.3, 240, 520));
+      this.W = vw < 640 ? Math.round(vw * 0.68) : Math.round(clamp(vw * 0.3, 240, 520));
       this.H = Math.round(this.W * 0.625);
       this.cy = Math.round(vh * (vw < 640 ? 0.4 : 0.42)); // where the current card's centre sits
       this.el.style.setProperty('--card-w', this.W + 'px');
@@ -560,11 +561,103 @@
   });
 
   /* ------------------------------------------------------------
+     About — the dark chapter after the hero
+     Four words on the right (story · sound · stages · contact); hovering
+     or scrolling picks one, the panel on the left answers it and the two
+     clips behind swap along. One more scroll past the last word and the
+     cards fly in; scrolling up from the first brings the title back.
+     ------------------------------------------------------------ */
+  const about = $('#about');
+  const aboutWords = $$('.about__word', about);
+  const aboutPanels = $$('.about__panel', about);
+  const aboutClips = $$('.about__clip', about);
+  const aboutDip = $('.about__dip', about);
+  const aboutCount = $('#aboutCount');
+  const CHAPTERS = aboutWords.length;
+  let chapter = -1, clipOn = -1, dipTimer = 0, aboutHideTimer = 0, aboutWarm = false;
+  let aboutAcc = 0, aboutOver = 0, aboutStepUntil = 0;
+
+  // fetch the two clips ahead of time (called once the hero is half-way through)
+  function warmAbout() {
+    if (aboutWarm) return;
+    aboutWarm = true;
+    aboutClips.forEach((v) => { v.preload = 'auto'; v.src = v.dataset.src; v.load(); });
+    if (document.fonts && document.fonts.load) document.fonts.load('600 20px Archivo').catch(() => {}); // the index's face, before it shows
+  }
+  // Both clips run the whole time the chapter is on; a switch dips through
+  // black and cuts. (Fading a video's opacity keeps the compositor busy for
+  // a while, which the cards flying in right after can't afford.)
+  function setClip(k) {
+    if (k === clipOn) return;
+    const fresh = clipOn < 0;
+    clipOn = k;
+    const cut = () => aboutClips.forEach((c, j) => c.classList.toggle('is-on', j === k));
+    clearTimeout(dipTimer);
+    if (fresh || REDUCED) { aboutDip.classList.remove('is-on'); cut(); return; }
+    aboutDip.classList.add('is-on');
+    dipTimer = setTimeout(() => { cut(); aboutDip.classList.remove('is-on'); }, 320);
+  }
+  function setChapter(i) {
+    i = clamp(i, 0, CHAPTERS - 1);
+    aboutAcc = 0;
+    if (i === chapter) return;
+    chapter = i;
+    aboutWords.forEach((w, k) => w.classList.toggle('is-active', k === i));
+    aboutPanels.forEach((p, k) => p.classList.toggle('is-active', k === i));
+    setClip(+aboutWords[i].dataset.clip || 0);
+    aboutCount.textContent = `${pad2(i + 1)} / ${pad2(CHAPTERS)}`;
+  }
+  aboutWords.forEach((w, i) => {
+    w.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') setChapter(i); });
+    w.addEventListener('click', () => setChapter(i));
+  });
+  function showAbout(i) {
+    clearTimeout(aboutHideTimer);
+    warmAbout();
+    aboutClips.forEach((v) => v.play().catch(() => {}));
+    body.classList.add('is-about');
+    aboutOver = 0;
+    aboutStepUntil = 0;
+    chapter = -1;
+    setChapter(i);
+    void about.offsetWidth; // commit display:block + the row before the fade starts
+    about.classList.add('is-on');
+    about.setAttribute('aria-hidden', 'false');
+    $$('a[data-route="about"]', nav).forEach((a) => a.classList.add('is-active'));
+  }
+  function hideAbout() {
+    about.classList.remove('is-on');
+    about.setAttribute('aria-hidden', 'true');
+    $$('a[data-route="about"]', nav).forEach((a) => a.classList.remove('is-active'));
+    aboutClips.forEach((v) => v.pause());
+    clearTimeout(dipTimer);
+    clearTimeout(aboutHideTimer);
+    aboutHideTimer = setTimeout(() => {
+      body.classList.remove('is-about');
+      clipOn = -1;
+    }, 850);
+  }
+  // wheel / keys / finger while the chapter is on: one word per flick; keep pushing at either end to leave
+  function aboutInput(dy) {
+    const now = performance.now();
+    if (now < aboutStepUntil) { aboutOver = 0; return; }
+    const first = chapter === 0 && dy < 0, last = chapter === CHAPTERS - 1 && dy > 0;
+    if (first || last) {
+      aboutOver += Math.abs(dy);
+      if (aboutOver > 150) { aboutOver = 0; if (first) leaveAboutUp(); else enterStack(); }
+      return;
+    }
+    aboutOver = 0;
+    aboutAcc += dy;
+    if (Math.abs(aboutAcc) > 80) { setChapter(chapter + Math.sign(aboutAcc)); aboutStepUntil = now + 420; }
+  }
+
+  /* ------------------------------------------------------------
      Landing hero
      Scroll scrubs `heroP` 0→1: "NorthSoul" parts into the About hero
      (words drift to the corners, the portrait fades in). Scrolling past
-     the end hands over to the stack; scrolling up from the first card
-     brings the hero back.
+     the end hands over to the About chapter; scrolling up from its first
+     word brings the hero back.
      ------------------------------------------------------------ */
   const hero = $('#hero');
   const heroL = $('.hero__name--l', hero);
@@ -575,8 +668,8 @@
   const heroCta = $('#heroCta');
   const hdr = $('.hdr');
 
-  let introDone = sessionStorage.getItem('ns-intro') === '1';
-  // 'hero' (scrubbing) | 'gather' (cards flying, no input) | 'stack'
+  let introDone = false;  // the hero plays on every load; within the session, Back / Archive return to the stack
+  // 'hero' (scrubbing) | 'about' (the chapter) | 'gather' (cards flying, no input) | 'stack'
   let phase = 'stack';
   let heroP = 0, heroTarget = 0, heroOverflow = 0, heroAuto = false;
   let heroLayout = null;
@@ -630,21 +723,25 @@
     heroP = REDUCED ? heroTarget : lerp(heroP, heroTarget, 0.11);
     if (Math.abs(heroTarget - heroP) < 0.0005) heroP = heroTarget;
     if (heroP !== heroLast) { renderHero(); heroLast = heroP; }
-    if (heroAuto && heroP >= 0.995) enterStack();
+    if (!aboutWarm && heroP > 0.5) warmAbout();
+    if (heroAuto && heroP >= 0.995) enterAbout();
     requestAnimationFrame(heroLoop);
   }
 
   function heroInput(dy) {
     if (heroTarget >= 1 && dy > 0) {
-      heroOverflow += dy;
-      if (heroOverflow > 120) enterStack();
+      // keep pushing once the words have settled: a hard flick shouldn't skip the split
+      if (heroP > 0.9) heroOverflow += dy;
+      if (heroOverflow > 120) enterAbout();
       return;
     }
     heroOverflow = 0;
     heroTarget = clamp(heroTarget + dy / 900, 0, 1);
   }
 
+  let heroHideTimer = 0;
   function showHero(atEnd) {
+    clearTimeout(heroHideTimer);
     phase = 'hero';
     heroAuto = false;
     heroOverflow = 0;
@@ -676,55 +773,90 @@
     stack.hidden = true;
   }
 
-  /* Hero → stack: the hero dissolves while the cards gather. */
-  function enterStack() {
+  /* Hero → about: the chapter fades in over the finished title. */
+  function enterAbout() {
     if (phase !== 'hero') return;
-    phase = 'gather';
+    phase = 'about';
     heroAuto = false;
+    heroOverflow = 0;
     hdr.style.opacity = '';
     hdr.classList.remove('is-hidden');
+    showAbout(0);
+    lockInput(700);
+    clearTimeout(heroHideTimer);
+    heroHideTimer = setTimeout(() => {
+      body.classList.remove('is-hero');
+      hero.classList.remove('is-ready', 'is-entering');
+      hero.style.opacity = '';
+    }, 900);
+  }
+
+  /* About → hero (scrolled up on the first word): the chapter fades, the title is waiting beneath. */
+  function leaveAboutUp() {
+    if (phase !== 'about') return;
+    showHero(true);
+    hideAbout();
+    lockInput(700);
+  }
+
+  /* About → stack: the chapter fades while the cards gather. */
+  function enterStack() {
+    if (phase !== 'about') return;
+    phase = 'gather';
     stack.hidden = false;
     stack.mode = 'intro';
-    hero.classList.add('is-entering');
+    hideAbout();
     stack.animateTo(1, REDUCED ? 0 : 1600, {
-      onUpdate: (p, t) => {
-        hero.style.opacity = String(1 - clamp(t / 0.38, 0, 1));
-        if (t > 0.62) body.classList.remove('is-hero');
-      },
       onDone: () => {
         phase = 'stack';
         edgeAcc = 0;
         stack.mode = 'archive';
-        body.classList.remove('is-hero');
-        hero.classList.remove('is-ready', 'is-entering');
-        hero.style.opacity = '';
         introDone = true;
-        sessionStorage.setItem('ns-intro', '1');
         lockInput(450);
+        if (heroRequested) { heroRequested = false; goHero(); }
+        else if (aboutRequested) { aboutRequested = false; goAbout(); }
       },
     });
   }
 
-  /* Stack → hero (scrolled up from the first card): cards scatter, hero returns. */
+  /* Stack → about (scrolled up from the first card): the cards scatter and the chapter
+     fades in on its last word — or, for the logo, straight back to the title. */
   function leaveStackUp() {
     if (phase !== 'stack' || stack.anim) return;
     phase = 'gather';
     stack.mode = 'intro';
     stack.jumpTo(0);
     stack.reseedScatter();
-    body.classList.add('is-hero');
-    hero.classList.add('is-ready', 'is-entering');
-    hero.style.opacity = '0';
-    heroP = heroTarget = 1;
-    measureHero();
-    renderHero();
+    const toHero = heroToStart || heroRequested;
+    if (toHero) {
+      body.classList.add('is-hero');
+      hero.classList.add('is-ready', 'is-entering');
+      hero.style.opacity = '0';
+      heroP = heroTarget = 1;
+      measureHero();
+      renderHero();
+    }
+    let shown = false;
     stack.animateTo(0, REDUCED ? 0 : 1400, {
-      onUpdate: (p, t) => { hero.style.opacity = String(clamp((t - 0.25) / 0.5, 0, 1)); },
+      onUpdate: (p, t) => {
+        if (toHero) hero.style.opacity = String(clamp((t - 0.25) / 0.5, 0, 1));
+        else if (!shown && t > 0.3) { shown = true; showAbout(aboutToStart ? 0 : CHAPTERS - 1); }
+      },
       onDone: () => {
         stack.hidden = true;
-        showHero(true);
+        stack.render(true); // last frame: parked at 0.02 so nothing ghosts through the hero
         lockInput(450);
-        if (heroToStart) { heroToStart = false; heroTarget = 0; }
+        if (toHero) {
+          showHero(true);
+          heroToStart = false; heroRequested = false;
+          heroTarget = 0;
+        } else {
+          phase = 'about';
+          if (!shown) showAbout(aboutToStart ? 0 : CHAPTERS - 1);
+          aboutToStart = false;
+          if (aboutRequested) { aboutRequested = false; setChapter(0); }
+          if (heroRequested) { heroRequested = false; goHero(); }
+        }
       },
     });
   }
@@ -733,6 +865,7 @@
     if (phase === 'stack') return;
     phase = 'stack';
     heroAuto = false;
+    if (body.classList.contains('is-about')) hideAbout();
     body.classList.remove('is-hero');
     hero.classList.remove('is-ready', 'is-entering');
     hero.style.opacity = '';
@@ -745,29 +878,59 @@
   window.addEventListener('resize', () => { if (phase === 'hero') { measureHero(); renderHero(); } });
   heroCta.addEventListener('click', () => {
     if (phase !== 'hero') return;
-    if (heroTarget >= 1) enterStack();
+    if (heroTarget >= 1) enterAbout();
     else { heroTarget = 1; heroAuto = true; }
   });
 
   /* ------------------------------------------------------------
-     One scroll: hero ⇄ stack ⇄ Book
+     One scroll: hero ⇄ about ⇄ stack ⇄ Book
      ------------------------------------------------------------ */
   let returnToBottom = false; // Book → stack lands on the last card
   let wantHero = false;       // logo clicked from another page: land on the hero
   let heroToStart = false;    // logo clicked on the stack: after the cards scatter, rejoin the title
+  let heroRequested = false;  // logo clicked while the cards were still flying: go once they land
+  let wantAbout = false;      // About clicked from another page: land on the chapter
+  let aboutToStart = false;   // About clicked on the stack: after the cards scatter, open on the first word
+  let aboutRequested = false; // About clicked while the cards were still flying
 
   function goHero() {
     if (current === 'archive') {
       closePlayer();
-      if (phase === 'stack' && !stack.anim) { heroToStart = true; leaveStackUp(); }
-      else if (phase === 'hero') { heroAuto = false; heroOverflow = 0; heroTarget = 0; }
+      if (phase === 'stack') {
+        if (stack.anim) { heroRequested = true; return; }
+        heroToStart = true; leaveStackUp();
+      } else if (phase === 'hero') {
+        heroAuto = false; heroOverflow = 0; heroTarget = 0;
+      } else if (phase === 'about') {
+        leaveAboutUp();
+        heroTarget = 0; // the title rejoins while the chapter fades
+      } else {
+        heroRequested = true; // 'gather': finish the flight first
+      }
       return;
     }
     wantHero = true;
     location.hash = '#/';
   }
   $$('[data-logo], [data-logo-inline]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); goHero(); }));
+
+  function goAbout() {
+    if (current === 'archive') {
+      closePlayer();
+      if (phase === 'about') setChapter(0);
+      else if (phase === 'hero') { heroAuto = true; heroTarget = 1; } // finish the title, then the chapter fades in
+      else if (phase === 'stack') {
+        if (stack.anim) { aboutRequested = true; return; }
+        aboutToStart = true; leaveStackUp();
+      } else aboutRequested = true; // 'gather'
+      return;
+    }
+    wantAbout = true;
+    location.hash = '#/';
+  }
+  $$('a[data-route="about"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); goAbout(); }));
   let bookAcc = 0;
+  let bookStep = -1;          // step to open the Book page on (-1 = top)
 
   function goBook() {
     if (phase !== 'stack') return;
@@ -778,6 +941,7 @@
   function landingInput(dy) {
     if (performance.now() < inputLockUntil || playerOpen) return;
     if (phase === 'hero') { heroInput(dy); return; }
+    if (phase === 'about') { aboutInput(dy); return; }
     if (phase !== 'stack') return;
     stack.scrollBy(dy);
     if (stack.atTop && dy < 0) {
@@ -828,6 +992,7 @@
     const dy = touchY - y;
     touchY = y;
     if (current === 'archive' && phase === 'hero') landingInput(dy * 2.2);
+    else if (current === 'archive' && phase === 'about') landingInput(dy * 1.2);
     else if (current === 'book' && window.scrollY <= 0 && dy < 0) {
       bookAcc += -dy;
       if (bookAcc > 140) { bookAcc = 0; returnToBottom = true; location.hash = '#/'; }
@@ -855,6 +1020,13 @@
         stack.mode = 'archive';
         stack.jumpTo(stack.max);
         lockInput(500);
+      } else if (wantAbout) {
+        // straight to the chapter: the title is parked at its end pose underneath
+        wantAbout = false;
+        startHero();
+        heroP = heroTarget = 1;
+        renderHero();
+        enterAbout();
       } else if (!introDone || wantHero) {
         wantHero = false;
         startHero();
@@ -869,7 +1041,16 @@
     bookAcc = 0;
     window.scrollTo(0, 0);
     current = name;
-    if (name === 'book') { storyStep = -1; updateStory(); }
+    if (name === 'book') {
+      storyStep = -1;
+      if (bookStep >= 0) {
+        // jump to that step's scroll position (no animation: the page has only just appeared)
+        const total = story.offsetHeight - window.innerHeight;
+        window.scrollTo(0, story.offsetTop + (total * (bookStep + 0.35)) / STEPS);
+        bookStep = -1;
+      }
+      updateStory();
+    }
   }
 
   function go(name, setup) {
@@ -879,6 +1060,7 @@
       activate(name);
       return;
     }
+    if (phase === 'about') hideAbout(); // the chapter fades with the page it is leaving
     body.classList.add('is-leaving');
     setTimeout(() => {
       activate(name);
@@ -888,16 +1070,30 @@
 
   function route() {
     const hash = location.hash.replace(/^#\/?/, '').replace(/\/$/, '');
-    const [name] = hash.split('/');
+    const [name, sub] = hash.split('/');
     if (!name) return go('archive', () => (document.title = `${CONFIG.brand} — ${CONFIG.tagline}`));
-    if (name === 'about') return go('about', () => (document.title = `About — ${CONFIG.brand}`));
-    if (name === 'book') return go('book', () => (document.title = `Book — ${CONFIG.brand}`));
+    if (name === 'about') {
+      // the About chapter lives in the main scroll: send it there and keep the address clean
+      history.replaceState(null, '', location.pathname + location.search + '#/');
+      if (current === 'archive') return goAbout();
+      wantAbout = true;
+      return go('archive', () => (document.title = `${CONFIG.brand} — ${CONFIG.tagline}`));
+    }
+    if (name === 'book') {
+      // #/book/night lands straight on the "Book the night" step; plain #/book (from the stack) starts at the top
+      bookStep = sub === 'night' ? STEPS - 1 : -1;
+      return go('book', () => (document.title = `Book — ${CONFIG.brand}`));
+    }
     go('404', () => (document.title = `404 — ${CONFIG.brand}`));
   }
 
   window.addEventListener('hashchange', route);
+  // a fresh load always opens on the hero; only the 404 page keeps its own address
+  if (location.hash && location.hash !== '#/' && !/^#\/?404/.test(location.hash)) {
+    history.replaceState(null, '', location.pathname + location.search + '#/');
+  }
   route();
 
   // console debugging
-  window.__ns = { get phase() { return phase; }, get heroP() { return heroP; }, get heroTarget() { return heroTarget; }, get route() { return current; }, get player() { return playerOpen; } };
+  window.__ns = { get phase() { return phase; }, get heroP() { return heroP; }, get heroTarget() { return heroTarget; }, get chapter() { return chapter; }, get route() { return current; }, get player() { return playerOpen; } };
 })();

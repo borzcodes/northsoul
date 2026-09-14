@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#f4f3ef">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1789403129">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..700&family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=1789418348">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f3ef'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' fill='%23101010'%3EN%3C/text%3E%3C/svg%3E">
 </head>
 <body class="route-archive">
@@ -52,6 +52,65 @@
     <button class="hero__cta" id="heroCta" type="button">Scroll</button>
   </div>
 
+  <!-- About: the dark chapter after the hero. Four words on the right — hover or
+       scroll through them; the panel on the left answers each one and the two
+       clips behind swap along. Then one more scroll and the cards fly in. -->
+  <section class="about" id="about" aria-hidden="true">
+    <div class="about__bg">
+      <video class="about__clip" muted loop playsinline preload="none" data-src="assets/media/video-17.mp4" poster="assets/tiles/video-17.jpg" style="object-position: 50% 45%"></video>
+      <video class="about__clip" muted loop playsinline preload="none" data-src="assets/media/video-05.mp4" poster="assets/tiles/video-05.jpg" style="object-position: 50% 55%"></video>
+      <div class="about__dip"></div>
+    </div>
+
+    <div class="about__panels">
+      <div class="about__panel">
+        <p class="about__eyebrow">01 — Who</p>
+        <h2 class="about__lead serif">From Morocco to the rooms that never sleep.</h2>
+        <p class="about__text">NorthSoul is a Moroccan DJ and producer based in Morocco and booked across Europe and beyond — nights in France, Spain and Turkey, from intimate red-lit rooms to festival-size floors.</p>
+        <p class="about__text">No pre-planned playlists. Every set is read off the floor and built as it happens — which is why the same night never plays twice.</p>
+      </div>
+      <div class="about__panel">
+        <p class="about__eyebrow">02 — What he plays</p>
+        <ul class="about__list serif">
+          <li>House <small>deep house</small></li>
+          <li>Afro house <small>organic</small></li>
+          <li>Melodic techno <small>progressive</small></li>
+          <li>Disco <small>edits</small></li>
+          <li>Open format <small>private events</small></li>
+        </ul>
+      </div>
+      <div class="about__panel">
+        <p class="about__eyebrow">03 — Where he has played</p>
+        <ul class="about__list serif">
+          <li>Morocco <small>home base</small></li>
+          <li>Spain <small>Toy Room Club, Madrid</small></li>
+          <li>France</li>
+          <li>Turkey</li>
+        </ul>
+      </div>
+      <div class="about__panel">
+        <p class="about__eyebrow">04 — Get in touch</p>
+        <p class="about__text">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight. Send the date, the city and the set length; every request gets a personal reply.</p>
+        <div class="rows rows--contact">
+          <a class="row row--link" data-mail-cta href="#"><span>Email</span><span data-mail-text>booking@northsoul.dj ↗</span></a>
+          <a class="row row--link" data-whatsapp href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span data-whatsapp-text>Message ↗</span></a>
+          <a class="row row--link" data-instagram href="#" target="_blank" rel="noopener"><span>Instagram</span><span data-instagram-text>Instagram ↗</span></a>
+        </div>
+        <a class="about__book" href="#/book/night">Book the night →</a>
+      </div>
+    </div>
+
+    <ul class="about__menu" id="aboutMenu">
+      <li><button class="about__word" type="button" data-clip="0">Story</button></li>
+      <li><button class="about__word" type="button" data-clip="1">Sound</button></li>
+      <li><button class="about__word" type="button" data-clip="0">Stages</button></li>
+      <li><button class="about__word" type="button" data-clip="1">Contact</button></li>
+    </ul>
+
+    <p class="about__hint">Scroll</p>
+    <p class="about__count" id="aboutCount"></p>
+  </section>
+
   <!-- Header -->
   <header class="hdr">
     <div class="hdr__brand">
@@ -62,7 +121,7 @@
     <nav class="hdr__nav" id="nav">
       <a href="#/" data-route="archive">Archive</a>
       <a href="#/about" data-route="about">About</a>
-      <a href="#/book" data-route="book">Book</a>
+      <a href="#/book/night" data-route="book">Book</a>
       <a class="ico" data-instagram href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg width="16" height="16"><use href="#ico-ig"/></svg></a>
     </nav>
   </header>
@@ -83,49 +142,6 @@
 
   <!-- Views -->
   <main class="views" id="views">
-
-    <section class="view view--about" data-view="about">
-      <div class="about__hero">
-        <p class="about__sub" data-about-sub>Moroccan DJ, playing worldwide</p>
-        <div class="about__img"><img data-about-img alt="NorthSoul portrait"></div>
-        <h1 class="about__name about__name--l serif" data-name="0">North</h1>
-        <h1 class="about__name about__name--r serif" data-name="1">Soul</h1>
-      </div>
-      <div class="about__body">
-        <div class="about__lead">
-          <h2 class="serif">From Morocco to the rooms that never sleep.</h2>
-          <p>NorthSoul is a Moroccan DJ and producer based in Morocco and booked across Europe and beyond — nights in France, Spain and Turkey, from intimate red-lit rooms to festival-size floors.</p>
-          <p>No pre-planned playlists. Every set is read off the floor and built as it happens — which is why the same night never plays twice.</p>
-        </div>
-        <div class="about__col">
-          <h3>Plays</h3>
-          <ul>
-            <li>House · deep house</li>
-            <li>Afro house · organic</li>
-            <li>Melodic techno · progressive</li>
-            <li>Disco · edits</li>
-            <li>Open format for private events</li>
-          </ul>
-        </div>
-        <div class="about__col">
-          <h3>Played</h3>
-          <ul>
-            <li>Morocco — home base</li>
-            <li>Spain — Toy Room Club, Madrid</li>
-            <li>France</li>
-            <li>Turkey</li>
-          </ul>
-        </div>
-        <div class="about__col">
-          <h3>Contact</h3>
-          <ul>
-            <li><a data-mail href="#">booking@northsoul.dj</a></li>
-            <li><a data-whatsapp href="#" target="_blank" rel="noopener">WhatsApp ↗</a></li>
-            <li><a href="#/book">Book the night →</a></li>
-          </ul>
-        </div>
-      </div>
-    </section>
 
     <section class="view view--book" data-view="book">
 
@@ -206,13 +222,13 @@
     <a class="site-ftr__logo" href="#/" data-logo-inline>NorthSoul</a>
     <nav class="site-ftr__nav">
       <a href="#/about">About</a>
-      <a href="#/book">Book</a>
+      <a href="#/book/night">Book</a>
       <a class="ico" data-instagram href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg width="16" height="16"><use href="#ico-ig"/></svg></a>
     </nav>
     <p class="site-ftr__legal">© <span data-year>2026</span> <span data-brand>NorthSoul</span>. All rights reserved.</p>
   </footer>
 
-  <script src="js/data.js?v=1789403129"></script>
-  <script src="js/app.js?v=1789403129"></script>
+  <script src="js/data.js?v=1789418348"></script>
+  <script src="js/app.js?v=1789418348"></script>
 </body>
 </html>
