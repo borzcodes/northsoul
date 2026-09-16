@@ -24,11 +24,11 @@ NS.CONFIG = {
   highlights: 7,
 
   nextEvent: {
-    title: 'Toy Room Club',
-    city: 'Madrid',
-    date: '2026-12-29',
-    note: 'Boiler Room special guest',
-    banner: 'assets/media/photo-01.jpg',
+    title: 'Kabana',
+    city: '',                            // e.g. 'Casablanca' — shown after the title and as a row
+    date: '2026-09-18',
+    note: 'Rooftop food & cocktails — best rooftop in town',
+    banner: 'assets/media/next-kabana.jpg',   // the poster, 3:4
     link: '',
   },
 

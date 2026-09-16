@@ -335,40 +335,40 @@
   const waDigits = (CONFIG.whatsapp || '').replace(/\D/g, '');
   $$('[data-whatsapp]').forEach((el) => { el.href = `https://wa.me/${waDigits}?text=${encodeURIComponent('Hi NorthSoul — I\'d like to book a night.')}`; });
   $$('[data-instagram]').forEach((el) => { el.href = CONFIG.instagram; });
+  // the clock on the contact panel: his local time
+  (function localTime() {
+    const els = $$('[data-local-time]');
+    if (!els.length) return;
+    const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
+    const tick = () => { const t = fmt.format(new Date()); els.forEach((el) => (el.textContent = t)); };
+    tick();
+    setInterval(tick, 30000);
+  })();
   const nav = $('#nav');
   document.title = `${CONFIG.brand} — ${CONFIG.tagline}`;
 
   /* ------------------------------------------------------------
-     Story (Book page): wheels of photos + scroll-driven steps
+     Story (Book page): two scroll-driven steps on one pinned screen
      ------------------------------------------------------------ */
   const story = $('#story');
-  const storyStage = $('#storyStage');
   const storyItems = $$('#storyIndex li');
   const storyPanels = $$('.story__panel');
   const STEPS = storyItems.length;
   let storyStep = -1;
 
-  (function buildWheels() {
-    const photos = MEDIA.filter((m) => m.kind === 'photo').slice(0, 8);
-    const pick = photos.length >= 8 ? photos : MEDIA.slice(0, 8);
-    $$('.wheel', storyStage).forEach((wheel, w) => {
-      for (let i = 0; i < 4; i++) {
-        const m = pick[(w * 4 + i) % pick.length];
-        const card = document.createElement('div');
-        card.className = 'card';
-        const dy = [-14, 8, -4, 12][i] + (w ? 6 : -4);
-        card.style.transform = `rotateY(${i * 90}deg) translateY(calc(-50% + ${dy}px))`;
-        const img = document.createElement('img');
-        img.src = m.src; img.alt = m.title; img.draggable = false; img.decoding = 'async';
-        card.appendChild(img);
-        wheel.appendChild(card);
-      }
-    });
-  })();
-
+  const storyClip = $('.story__clip', story);
+  function nightClip(on) {
+    if (!storyClip) return;
+    if (on) {
+      if (!storyClip.src) { storyClip.preload = 'auto'; storyClip.src = storyClip.dataset.src; }
+      storyClip.play().catch(() => {});
+    } else if (storyClip.src) storyClip.pause();
+  }
   function setStoryStep(step) {
     if (step === storyStep) return;
     storyStep = step;
+    story.dataset.step = String(step);
+    nightClip(step === STEPS - 1);
     storyItems.forEach((li, i) => li.classList.toggle('is-active', i === step));
     storyPanels.forEach((p, i) => p.classList.toggle('is-active', i === step));
   }
@@ -380,13 +380,16 @@
     const vh = window.innerHeight;
     const total = Math.max(1, story.offsetHeight - vh);
     const p = clamp((window.scrollY - story.offsetTop) / total, 0, 1);
-    storyStage.style.setProperty('--rot', (-p * 90 * (STEPS - 1)).toFixed(2) + 'deg');
     setStoryStep(Math.min(STEPS - 1, Math.floor(p * STEPS + 0.0001)));
     story.classList.toggle('is-done', p > 0.9);
+    // the story is dark: the header goes light while its pinned screen is on
+    const y = window.scrollY, top = story.offsetTop, end = top + story.offsetHeight - vh;
+    body.classList.toggle('is-night', y > top - vh * 0.5 && y < end + vh * 0.5);
   }
   window.addEventListener('scroll', () => { if (!storyRaf) storyRaf = requestAnimationFrame(updateStory); }, { passive: true });
   window.addEventListener('resize', () => { if (!storyRaf) storyRaf = requestAnimationFrame(updateStory); });
-  storyItems.forEach((li, i) => $('button', li).addEventListener('click', () => {
+  $$('[data-step]', story).forEach((b) => b.addEventListener('click', () => {
+    const i = +b.dataset.step;
     const total = story.offsetHeight - window.innerHeight;
     window.scrollTo({ top: story.offsetTop + (total * (i + 0.35)) / STEPS, behavior: 'smooth' });
   }));
@@ -401,7 +404,7 @@
       el.title = [v.name, v.city].filter(Boolean).join(', ');
       if (v.logo) {
         const img = document.createElement('img');
-        img.src = v.logo; img.alt = v.name; img.draggable = false;
+        img.src = v.logo; img.alt = v.name; img.draggable = false; img.decoding = 'async';
         el.appendChild(img);
       } else {
         el.textContent = v.name;
@@ -420,6 +423,7 @@
     const box = $('#nextEvent');
     if (!n || !box) return;
     $('[data-next-banner]', box).src = n.banner || CONFIG.aboutImage;
+    $$('[data-next-banner-bg]').forEach((el) => (el.src = n.banner || CONFIG.aboutImage));
     $('[data-next-title]', box).textContent = [n.title, n.city].filter(Boolean).join(' — ') || 'Next event';
     const setRow = (name, value) => {
       const row = $(`[data-next-row="${name}"]`, box);
@@ -427,11 +431,16 @@
       if (value) $(`[data-next-${name}]`, box).textContent = value;
     };
     const d = n.date ? new Date(n.date + 'T12:00:00') : null;
+    const count = $('[data-next-count]', box);
     if (d && !isNaN(d)) {
-      const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+      $('[data-next-date]', box).textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+      // the countdown: big while the night is still ahead
       const days = Math.ceil((d - new Date()) / 86400000);
-      const when = days > 1 ? `in ${days} days` : days === 1 ? 'tomorrow' : days === 0 ? 'tonight' : '';
-      $('[data-next-date]', box).textContent = when ? `${label} · ${when}` : label;
+      if (days >= 0) {
+        $('[data-next-days]', box).textContent = days === 0 ? 'Tonight' : String(days).padStart(2, '0');
+        $('[data-next-unit]', box).textContent = days === 0 ? '' : days === 1 ? 'day to go' : 'days to go';
+        count.hidden = false;
+      }
     } else {
       $('[data-next-date]', box).textContent = 'To be announced';
     }
@@ -590,7 +599,7 @@
     if (aboutWarm) return;
     aboutWarm = true;
     aboutClips.forEach((v) => { v.preload = 'auto'; v.src = v.dataset.src; v.load(); });
-    if (document.fonts && document.fonts.load) document.fonts.load('600 20px Archivo').catch(() => {}); // the index's face, before it shows
+    if (document.fonts && document.fonts.load) document.fonts.load('400 20px Anton').catch(() => {}); // the menu's face, before it shows
   }
   // Both clips run the whole time the chapter is on; a switch dips through
   // black and cuts. (Fading a video's opacity keeps the compositor busy for
@@ -1020,6 +1029,7 @@
     body.classList.add(name === 'archive' ? 'route-archive' : name === '404' ? 'route-404' : 'route-page');
     $$('a[data-route]', nav).forEach((a) => a.classList.toggle('is-active', a.dataset.route === name));
     if (name !== 'archive') { cancelHero(); closePlayer(); }
+    if (name !== 'book') { body.classList.remove('is-night'); nightClip(false); }
     stack.hidden = name !== 'archive' && name !== '404';
     if (name === 'archive') {
       if (returnToBottom) {

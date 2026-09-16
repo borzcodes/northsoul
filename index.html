@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#f4f3ef">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..700&family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1789427120">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=1789526156">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f3ef'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' fill='%23101010'%3EN%3C/text%3E%3C/svg%3E">
 </head>
 <body class="route-archive">
@@ -63,47 +63,38 @@
     </div>
 
     <div class="about__panels">
-      <div class="about__panel">
+      <div class="about__panel about__panel--story">
         <p class="about__eyebrow">01 — Who</p>
-        <h2 class="about__lead serif">From Morocco to the rooms that never sleep.</h2>
-        <p class="about__text">NorthSoul is a Moroccan DJ and producer based in Morocco and booked across Europe and beyond — nights in France, Spain and Turkey, from intimate red-lit rooms to festival-size floors.</p>
-        <p class="about__text">No pre-planned playlists. Every set is read off the floor and built as it happens — which is why the same night never plays twice.</p>
-      </div>
-      <div class="about__panel">
-        <p class="about__eyebrow">02 — What he plays</p>
-        <ul class="about__list serif">
-          <li>House <small>deep house</small></li>
-          <li>Afro house <small>organic</small></li>
-          <li>Melodic techno <small>progressive</small></li>
-          <li>Disco <small>edits</small></li>
-          <li>Open format <small>private events</small></li>
-        </ul>
-      </div>
-      <div class="about__panel">
-        <p class="about__eyebrow">03 — Where he has played</p>
-        <ul class="about__list serif">
-          <li>Morocco <small>home base</small></li>
-          <li>Spain <small>Toy Room Club, Madrid</small></li>
-          <li>France</li>
-          <li>Turkey</li>
-        </ul>
-      </div>
-      <div class="about__panel">
-        <p class="about__eyebrow">04 — Get in touch</p>
-        <p class="about__text">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight. Send the date, the city and the set length; every request gets a personal reply.</p>
-        <div class="rows rows--contact">
-          <a class="row row--link" data-mail-cta href="#"><span>Email</span><span data-mail-text>booking@northsoul.dj ↗</span></a>
-          <a class="row row--link" data-whatsapp href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span data-whatsapp-text>Message ↗</span></a>
-          <a class="row row--link" data-instagram href="#" target="_blank" rel="noopener"><span>Instagram</span><span data-instagram-text>Instagram ↗</span></a>
+        <h2 class="about__lead">From Morocco to the rooms that never sleep.</h2>
+        <div class="about__cols">
+          <p class="about__text">NorthSoul is a Moroccan DJ and producer based in Morocco and booked across Europe and beyond — nights in France, Spain and Turkey, from intimate red-lit rooms to festival-size floors.</p>
+          <p class="about__text">No pre-planned playlists. Every set is read off the floor and built as it happens — which is why the same night never plays twice.</p>
         </div>
-        <a class="about__book" href="#/book/night">Book the night →</a>
+        <div class="about__facts">
+          <p class="about__fact"><span>Based in</span>Morocco</p>
+          <p class="about__fact"><span>Played</span>France · Spain · Turkey</p>
+          <p class="about__fact"><span>Sound</span>House · afro house · melodic techno</p>
+        </div>
+      </div>
+      <div class="about__panel about__panel--contact">
+        <p class="about__eyebrow">02 — Get in touch</p>
+        <p class="about__lede">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight.</p>
+        <p class="about__text">Send the date, the city and the set length; every request gets a personal reply.</p>
+        <div class="reach reach--about">
+          <a class="reach__row" data-mail-cta href="#"><span class="reach__label">Email</span><span class="reach__value" data-mail-text>booking@northsoul.dj ↗</span></a>
+          <a class="reach__row" data-whatsapp href="#" target="_blank" rel="noopener"><span class="reach__label">WhatsApp</span><span class="reach__value" data-whatsapp-text>Message ↗</span></a>
+          <a class="reach__row" data-instagram href="#" target="_blank" rel="noopener"><span class="reach__label">Instagram</span><span class="reach__value" data-instagram-text>Instagram ↗</span></a>
+        </div>
+        <div class="about__foot">
+          <p class="about__fact"><span>Based in</span>Morocco · <span data-local-time>—</span> local</p>
+          <p class="about__fact"><span>Sets</span>60 minutes to all night</p>
+          <a class="about__book" href="#/book/night">Book the night →</a>
+        </div>
       </div>
     </div>
 
     <ul class="about__menu" id="aboutMenu">
       <li><button class="about__word" type="button" data-clip="0">Story</button></li>
-      <li><button class="about__word" type="button" data-clip="1">Sound</button></li>
-      <li><button class="about__word" type="button" data-clip="0">Stages</button></li>
       <li><button class="about__word" type="button" data-clip="1">Contact</button></li>
     </ul>
 
@@ -156,15 +147,14 @@
         </div>
       </section>
 
-      <!-- Pinned story: two steps, a stack of titles bottom-left, the active
-           step's content, and a wheel of photos that turns as you scroll -->
+      <!-- Pinned story: two steps — the next event's poster with its facts, then how to book;
+           the two titles bottom-right say where you are -->
       <div class="story" id="story">
         <div class="story__pin">
-          <div class="story__scene">
-            <div class="story__stage" id="storyStage">
-              <div class="wheel wheel--a" data-wheel="a"></div>
-              <div class="wheel wheel--b" data-wheel="b"></div>
-            </div>
+          <!-- the story is dark: the poster, blurred, behind step 1; a clip of the room behind step 2 -->
+          <div class="story__haze" aria-hidden="true"><img data-next-banner-bg alt=""></div>
+          <div class="story__night" aria-hidden="true">
+            <video class="story__clip" muted loop playsinline preload="none" data-src="assets/media/video-13.mp4" poster="assets/tiles/video-13.jpg"></video>
           </div>
 
           <ol class="story__index" id="storyIndex">
@@ -175,27 +165,39 @@
           <div class="story__panels">
             <!-- step 1: the poster + the facts -->
             <div class="story__panel story__panel--event is-active" id="nextEvent">
-              <div class="next__banner"><img data-next-banner alt="Next event banner"></div>
+              <div class="next__banner"><img data-next-banner alt="Next event poster"></div>
               <div class="next__facts">
+                <p class="story__eyebrow">01 — Next event</p>
                 <p class="story__kicker" data-next-title>—</p>
+                <div class="next__count" data-next-count hidden>
+                  <span class="next__num" data-next-days></span>
+                  <span class="next__unit" data-next-unit></span>
+                </div>
                 <div class="rows">
                   <div class="row"><span>Date</span><span data-next-date>To be announced</span></div>
                   <div class="row" data-next-row="city"><span>City</span><span data-next-city></span></div>
-                  <div class="row" data-next-row="note"><span>Line-up</span><span data-next-note></span></div>
+                  <div class="row" data-next-row="note"><span>The night</span><span data-next-note></span></div>
                   <a class="row row--link" data-next-link href="#" target="_blank" rel="noopener" hidden><span>Tickets</span><span>Get tickets ↗</span></a>
                 </div>
+                <button class="next__cta" type="button" data-step="1">Book a night like this →</button>
               </div>
             </div>
 
             <!-- step 2: how a booking works + how to reach him -->
-            <div class="story__panel">
-              <p class="story__text">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight. Send the date, the city and the set length; every request gets a personal reply.</p>
-              <div class="rows rows--contact">
-                <a class="row row--link" data-mail-cta href="#"><span>Email</span><span data-mail-text>booking@northsoul.dj ↗</span></a>
-                <a class="row row--link" data-whatsapp href="#" target="_blank" rel="noopener"><span>WhatsApp</span><span data-whatsapp-text>Message ↗</span></a>
-                <a class="row row--link" data-instagram href="#" target="_blank" rel="noopener"><span>Instagram</span><span data-instagram-text>Instagram ↗</span></a>
+            <div class="story__panel story__panel--night">
+              <p class="story__eyebrow">02 — Book the night</p>
+              <h2 class="story__lead">Clubs, festivals, private and corporate events — in Morocco or anywhere with a flight.</h2>
+              <p class="story__text">Send the date, the city and the set length; every request gets a personal reply.</p>
+              <div class="reach">
+                <a class="reach__row" data-mail-cta href="#"><span class="reach__label">Email</span><span class="reach__value" data-mail-text>booking@northsoul.dj ↗</span></a>
+                <a class="reach__row" data-whatsapp href="#" target="_blank" rel="noopener"><span class="reach__label">WhatsApp</span><span class="reach__value" data-whatsapp-text>Message ↗</span></a>
+                <a class="reach__row" data-instagram href="#" target="_blank" rel="noopener"><span class="reach__label">Instagram</span><span class="reach__value" data-instagram-text>Instagram ↗</span></a>
               </div>
-              <p class="story__fine">Sets from 60 minutes to all night · travel quoted separately · a deposit secures the date</p>
+              <dl class="terms">
+                <div><dt>Sets</dt><dd>60 minutes to all night</dd></div>
+                <div><dt>Travel</dt><dd>Flights and stay quoted separately</dd></div>
+                <div><dt>Deposit</dt><dd>Secures the date</dd></div>
+              </dl>
             </div>
           </div>
 
@@ -228,7 +230,7 @@
     <p class="site-ftr__legal">© <span data-year>2026</span> <span data-brand>NorthSoul</span>. All rights reserved.</p>
   </footer>
 
-  <script src="js/data.js?v=1789427120"></script>
-  <script src="js/app.js?v=1789427120"></script>
+  <script src="js/data.js?v=1789526156"></script>
+  <script src="js/app.js?v=1789526156"></script>
 </body>
 </html>

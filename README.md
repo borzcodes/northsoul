@@ -4,14 +4,14 @@ A static, dependency-free site (plain HTML/CSS/JS). White edition of the referen
 scroll-driven landing hero, a dark About chapter on two clips, a vertical 3D "stack" of photos + clips with a player, next event + booking, 404.
 
 **One continuous scroll:** "NorthSoul" alone → scrolling parts the two words and reveals the portrait
-(header fades in) → scrolling once more fades in the **About** chapter: an index of four rows on the right —
-Story · Sound · Stages · Contact, set in Archivo — with a cream bar that slides to the row you hover, scroll or tap; the panel on the left answers each one
-(who he is, what he plays, where he has played, how to get in touch) and the two clips behind
+(header fades in) → scrolling once more fades in the **About** chapter: two heavy condensed lines stacked on the right —
+Story · Contact, set in Anton — that you hover, scroll or tap through; the panel on the left answers each one
+(who he is, how to get in touch) and the two clips behind
 (`assets/media/video-17.mp4`, `video-05.mp4`) switch with a dip to black → past the last word the cards fly in to form the stack
 → the stack: one card faces you, the previous ones lie flattened above, the next waits below and rolls up as
 you scroll (videos play muted in place; click / tap the facing card to open it in the player) → past the last card, the Book page:
 a **Trusted by** strip of venue logos, then
-(a pinned three-step story — Next event · Book the night · Get in touch — with a wheel of photos that turns per step, then the footer).
+(a dark, pinned two-step story — Next event: the poster, a countdown and the facts on the poster's own blurred haze · Book the night: a clip of the room behind Email / WhatsApp / Instagram and the terms — then the footer).
 It all reverses: scroll up at the top of Book to return to the last card, past the first card to bring the About chapter back
 (on its last word), and past its first word to bring the hero back. The logo always returns to the title; **About** in the header
 jumps to the chapter from anywhere.
