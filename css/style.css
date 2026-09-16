@@ -105,14 +105,6 @@ body.route-404 .hdr > * { pointer-events: none; }
   transition: opacity 0.6s ease;
 }
 .ftr__hint { font-size: calc(var(--fs) * 0.846); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: center; }
-.ftr__now { display: flex; flex-direction: column; gap: 6px; }
-.ftr__tag { font-size: calc(var(--fs) * 0.808); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.ftr__title {
-  font-size: clamp(22px, 2.4vw, 34px);
-  line-height: 1;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.ftr__title.is-swapping { opacity: 0; transform: translateY(6px); }
 .ftr__count { text-align: right; font-variant-numeric: tabular-nums; }
 /* thumbnails of the current + next item, top-right */
 .index {
@@ -819,10 +811,14 @@ body.is-night .hdr { color: var(--bg); }
 .story__panel--event {
   width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(300px, 520px);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 20px clamp(32px, 4vw, 72px);
   align-items: center;
 }
+.story__panel--event .story__eyebrow { font-size: calc(var(--fs) * 0.923); }
+.story__panel--event .story__kicker { font-size: clamp(40px, 4.2vw, 68px); margin-bottom: clamp(6px, 1vh, 12px); }
+.story__panel--event .row { font-size: clamp(16px, 1.45vw, 21px); padding: clamp(14px, 2.2vh, 20px) 0; grid-template-columns: minmax(120px, 22%) 1fr; }
+.story__panel--event .next__cta { font-size: clamp(15px, 1.25vw, 18px); margin-top: clamp(22px, 3.6vh, 34px); }
 .next__count {
   display: flex;
   align-items: baseline;
@@ -831,12 +827,12 @@ body.is-night .hdr { color: var(--bg); }
 }
 .next__num {
   font-family: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
-  font-size: clamp(72px, 9vw, 150px);
+  font-size: clamp(110px, 14vw, 230px);
   line-height: 0.85;
   letter-spacing: 0.01em;
 }
 .next__unit {
-  font-size: calc(var(--fs) * 0.885);
+  font-size: calc(var(--fs) * 1.0);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 243, 239, 0.6);
@@ -854,7 +850,7 @@ body.is-night .hdr { color: var(--bg); }
 .story__panel .row { font-size: clamp(13px, 1.05vw, 15px); padding: 12px 0; grid-template-columns: minmax(96px, 26%) 1fr; }
 .story__panel .rows { border-top-width: 1.5px; }
 .next__banner {
-  height: min(80vh, 860px);
+  height: min(84vh, 960px);
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: rgba(244, 243, 239, 0.06);
@@ -1014,7 +1010,6 @@ body.route-page .site-ftr { display: grid; }
   .index { width: 52px; }
   .index__thumbs { width: 52px; }
   .index__more { font-size: 12px; }
-  .ftr__title { font-size: 22px; }
   .index { top: 56px; width: 52px; }
   .player__title { left: var(--pad); top: auto; bottom: 14vh; transform: none; font-size: 24px; }
   .player__stage { width: min(88vw, calc(56vh * var(--ar, 1.6))); top: 44%; }

@@ -459,26 +459,16 @@
   const stack = new Stack($('#stack'), HIGHLIGHTS);
   window.__stack = stack; // console debugging
   const seeAll = $('#seeAll');
-  const nowTag = $('#nowTag');
-  const nowTitle = $('#nowTitle');
   const ftrCount = $('#ftrCount');
   const indexImgs = $$('#index .index__thumbs img');
   const pad2 = (n) => String(n).padStart(2, '0');
 
-  let titleTimer = 0;
   stack.onChange = (i, item) => {
     ftrCount.textContent = `${pad2(i + 1)} / ${pad2(stack.cards.length)}`;
     indexImgs[0].src = item.src;
     const next = stack.cards[i + 1] && stack.cards[i + 1].item;
     if (next) indexImgs[1].src = next.src;
     indexImgs[1].style.visibility = next ? '' : 'hidden';
-    nowTitle.classList.add('is-swapping');
-    clearTimeout(titleTimer);
-    titleTimer = setTimeout(() => {
-      nowTag.textContent = item.video ? 'Video' : 'Photo';
-      nowTitle.textContent = item.title + (item.year ? ` · ${item.year}` : '');
-      nowTitle.classList.remove('is-swapping');
-    }, 180);
   };
   stack.onChange(0, HIGHLIGHTS[0]);
 
