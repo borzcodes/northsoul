@@ -874,7 +874,7 @@ body.is-night .hdr { color: var(--bg); }
 .reach { border-top: 1px solid rgba(244, 243, 239, 0.5); }
 .reach__row {
   display: grid;
-  grid-template-columns: minmax(96px, 22%) 1fr;
+  grid-template-columns: minmax(96px, 22%) minmax(0, 1fr);
   align-items: baseline;
   gap: 16px;
   padding: clamp(12px, 1.8vh, 18px) 0;
@@ -883,11 +883,13 @@ body.is-night .hdr { color: var(--bg); }
 .reach__label { font-size: calc(var(--fs) * 0.808); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(244, 243, 239, 0.6); }
 .reach__value {
   display: block;
+  min-width: 0;
   font-family: var(--sans);
   font-weight: 400;
   font-size: clamp(17px, 1.5vw, 22px);
   line-height: 1.1;
   letter-spacing: 0;
+  white-space: nowrap;            /* an address, a number, a handle: one line, always */
   transition: transform 0.45s var(--ease), color 0.3s ease;
 }
 .reach__row:hover .reach__value { transform: translateX(0.25em); color: #e33d2f; }
